@@ -1,0 +1,922 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// MULTI-TENANCY
+// ============================================
+
+enum TenantPlan {
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+}
+
+model Tenant {
+  id              String       @id @default(cuid())
+  slug            String       @unique
+  name            String
+  logo            String?
+  primaryColor    String       @default("#FF6B00")
+  accentColor     String       @default("#1A1A2E")
+  favicon         String?
+  customDomain    String?      @unique
+  plan            TenantPlan   @default(STARTER)
+  stripeAccountId String?
+  features        String[]     @default([])
+  settings        Json         @default("{}")
+  status          TenantStatus @default(TRIAL)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  users           User[]
+  workoutPlans    WorkoutPlan[]
+  posts           Post[]
+  groups          Group[]
+  events          Event[]
+  products        Product[]
+  albums          Album[]
+  books           Book[]
+  categories      Category[]
+  streams         Stream[]
+  challenges      Challenge[]
+
+  @@index([slug])
+  @@index([customDomain])
+}
+
+// ============================================
+// USERS & PROFILES
+// ============================================
+
+enum UserRole {
+  MEMBER
+  COACH
+  ADMIN
+  OWNER
+  SUPER_ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  tenantId      String
+  fullName      String
+  username      String
+  email         String
+  passwordHash  String
+  profilePhoto  String?
+  role          UserRole  @default(MEMBER)
+  emailVerified Boolean   @default(false)
+  isBlocked     Boolean   @default(false)
+  otpCode       String?
+  otpExpiresAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  profile       UserProfile?
+  coachProfile  CoachProfile?
+
+  workoutPlans     WorkoutPlan[]    @relation("CoachPlans")
+  workoutSessions  WorkoutSession[]
+  posts            Post[]
+  comments         Comment[]
+  playlists        Playlist[]
+
+  followers     Follow[]  @relation("Following")
+  following     Follow[]  @relation("Followers")
+  sentRequests  WorkoutRequest[] @relation("SentRequests")
+  receivedRequests WorkoutRequest[] @relation("ReceivedRequests")
+  groupMemberships GroupMember[]
+
+  cartItems     CartItem[]
+  orders        Order[]
+  subscription  Subscription?
+  donations     Donation[]
+
+  eventBookings EventBooking[]
+  streams       Stream[]
+
+  likes         Like[]
+  saves         Save[]
+  affiliateLinks AffiliateLink[]
+  notifications  Notification[]
+
+  reportsFiled   Report[]  @relation("ReportsFiled")
+  blockedUsers   Block[]   @relation("BlockedBy")
+  blockedByUsers Block[]   @relation("BlockedUsers")
+
+  challengeParticipations ChallengeParticipant[]
+  points                  Int @default(0)
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, username])
+  @@index([tenantId])
+  @@index([email])
+}
+
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  age                   Int?
+  gender                String?
+  dob                   DateTime?
+  height                Float?
+  weight                Float?
+  activityLevel         String?
+  goals                 String[]
+  dietPreference        String?
+  medicalConsiderations String?
+  equipmentAccess       String?
+  injuryFlags           String[]
+  preferredDays         String[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum CoachCategory {
+  WORKOUT_TRAINER
+  MEDITATION
+  YOGA
+  HEALTHY_FOODS
+  BOOKS
+  PSYCHIATRIST
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model CoachProfile {
+  id              String         @id @default(cuid())
+  userId          String         @unique
+  category        CoachCategory
+  certifications  String[]
+  bio             String?
+  approvalStatus  ApprovalStatus @default(PENDING)
+  approvedAt      DateTime?
+  commissionRate  Float          @default(0.80)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  clientNotes     ClientNote[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClientNote {
+  id             String   @id @default(cuid())
+  coachProfileId String
+  clientUserId   String
+  note           String
+  tags           String[]
+  createdAt      DateTime @default(now())
+
+  coachProfile CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// SOCIAL / COMMUNITY
+// ============================================
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Follow {
+  id          String       @id @default(cuid())
+  followerId  String
+  followingId String
+  status      FollowStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+
+  follower  User @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  title     String?
+  caption   String?
+  mediaUrl  String?
+  mediaType String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+  saves    Save[]
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String?
+  planId    String?
+  createdAt DateTime @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  workoutPlan WorkoutPlan?  @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, planId])
+}
+
+model Save {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String?
+  planId    String?
+  createdAt DateTime @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  workoutPlan WorkoutPlan?  @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, planId])
+}
+
+enum RequestLocation {
+  INDOOR
+  OUTDOOR
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model WorkoutRequest {
+  id         String          @id @default(cuid())
+  senderId   String
+  receiverId String
+  location   RequestLocation
+  status     RequestStatus   @default(PENDING)
+  createdAt  DateTime        @default(now())
+
+  sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  coverImage  String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id])
+  members GroupMember[]
+
+  @@index([tenantId])
+}
+
+enum GroupRole {
+  MEMBER
+  ADMIN
+  CREATOR
+}
+
+model GroupMember {
+  id       String    @id @default(cuid())
+  groupId  String
+  userId   String
+  role     GroupRole  @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+// ============================================
+// WORKOUTS & FITNESS
+// ============================================
+
+model Category {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  slug        String
+  parentId    String?
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
+  parent   Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children Category[] @relation("SubCategories")
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+enum WorkoutType {
+  HOME
+  GYM
+}
+
+model WorkoutPlan {
+  id          String      @id @default(cuid())
+  tenantId    String
+  coachId     String
+  name        String
+  description String?
+  repetitions Boolean     @default(false)
+  type        WorkoutType @default(GYM)
+  category    String?
+  subcategory String?
+  coverImage  String?
+  difficulty  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  coach     User       @relation("CoachPlans", fields: [coachId], references: [id], onDelete: Cascade)
+  exercises Exercise[]
+  sessions  WorkoutSession[]
+  likes     Like[]
+  saves     Save[]
+
+  @@index([tenantId])
+  @@index([coachId])
+}
+
+model Exercise {
+  id              String   @id @default(cuid())
+  planId          String
+  name            String
+  description     String?
+  targetBodyParts String[]
+  duration        Int?
+  equipmentNeeded String?
+  videoUrl        String?
+  thumbnailUrl    String?
+  order           Int      @default(0)
+  sets            Int?
+  reps            Int?
+  restSeconds     Int?
+  createdAt       DateTime @default(now())
+
+  plan             WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  sessionExercises SessionExercise[]
+}
+
+model WorkoutSession {
+  id          String    @id @default(cuid())
+  userId      String
+  planId      String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  duration    Int?
+  forgeScore  Int?
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      WorkoutPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises SessionExercise[]
+
+  @@index([userId])
+}
+
+model SessionExercise {
+  id            String  @id @default(cuid())
+  sessionId     String
+  exerciseId    String
+  setsCompleted Int     @default(0)
+  repsCompleted Int     @default(0)
+  weight        Float?
+  completed     Boolean @default(false)
+
+  session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// MUSIC
+// ============================================
+
+model Album {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  title       String?
+  subTitle    String?
+  description String?
+  coverImage  String?
+  category    String?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  songs  Song[]
+
+  @@index([tenantId])
+}
+
+model Song {
+  id        String   @id @default(cuid())
+  albumId   String
+  name      String
+  artist    String
+  genre     String?
+  lyrics    String?
+  duration  Int      @default(0)
+  audioUrl  String?
+  imageUrl  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  album         Album          @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  playlistSongs PlaylistSong[]
+}
+
+model Playlist {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songs PlaylistSong[]
+}
+
+model PlaylistSong {
+  id         String @id @default(cuid())
+  playlistId String
+  songId     String
+  order      Int    @default(0)
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  song     Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, songId])
+}
+
+// ============================================
+// BOOKS
+// ============================================
+
+model Book {
+  id          String   @id @default(cuid())
+  tenantId    String
+  title       String
+  author      String
+  language    String
+  category    String
+  subcategory String?
+  coverImage  String?
+  about       String?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+// ============================================
+// EVENTS & CALENDAR
+// ============================================
+
+enum EventType {
+  LIVE_CLASS
+  IN_PERSON
+  WORKSHOP
+  APPOINTMENT
+  CHALLENGE_EVENT
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  tenantId    String
+  coachId     String?
+  title       String
+  description String?
+  type        EventType
+  startTime   DateTime
+  endTime     DateTime
+  capacity    Int?
+  location    String?
+  streamUrl   String?
+  coverImage  String?
+  price       Float     @default(0)
+  isRecurring Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id])
+  bookings EventBooking[]
+
+  @@index([tenantId])
+  @@index([startTime])
+}
+
+enum BookingStatus {
+  BOOKED
+  WAITLISTED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+model EventBooking {
+  id       String        @id @default(cuid())
+  eventId  String
+  userId   String
+  status   BookingStatus @default(BOOKED)
+  qrCode   String?
+  bookedAt DateTime      @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+// ============================================
+// LIVE STREAMING
+// ============================================
+
+enum StreamType {
+  PUBLIC
+  MEMBERS_ONLY
+  PAY_PER_VIEW
+  GROUP_ONLY
+}
+
+enum StreamStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+model Stream {
+  id          String       @id @default(cuid())
+  tenantId    String
+  hostId      String
+  title       String
+  category    String?
+  type        StreamType   @default(PUBLIC)
+  status      StreamStatus @default(SCHEDULED)
+  replayUrl   String?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  price       Float        @default(0)
+  viewerCount Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// ============================================
+// COMMERCE
+// ============================================
+
+model Product {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  category    String?
+  stock       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([tenantId])
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int    @default(1)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  total           Float
+  status          OrderStatus @default(PENDING)
+  stripePaymentId String?
+  shippingAddress Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// SUBSCRIPTIONS & PAYMENTS
+// ============================================
+
+enum SubscriptionPlan {
+  BASIC
+  PREMIUM
+  ELITE
+}
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+model Subscription {
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  plan             SubscriptionPlan     @default(BASIC)
+  interval         SubscriptionInterval @default(MONTHLY)
+  stripeSubId      String?
+  status           SubscriptionStatus   @default(ACTIVE)
+  currentPeriodEnd DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Donation {
+  id              String   @id @default(cuid())
+  userId          String
+  coachId         String?
+  amount          Float
+  stripePaymentId String?
+  message         String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// AFFILIATE & REFERRALS
+// ============================================
+
+model AffiliateLink {
+  id           String   @id @default(cuid())
+  userId       String
+  code         String   @unique
+  campaignName String?
+  clicks       Int      @default(0)
+  conversions  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+enum NotificationType {
+  SUBSCRIPTION_RENEWAL
+  LIKE
+  COMMENT
+  NEW_POST
+  REQUEST_ACCEPTED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  CALL_ALERT
+  WORKOUT_COMPLETED
+  EVENT_REMINDER
+  CHALLENGE_REMINDER
+  COACH_MESSAGE
+  ACCOUNT_APPROVED
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// ============================================
+// MODERATION
+// ============================================
+
+enum ReportTargetType {
+  POST
+  USER
+  COMMENT
+  CONTENT
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id         String           @id @default(cuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+  reason     String
+  status     ReportStatus     @default(PENDING)
+  createdAt  DateTime         @default(now())
+
+  reporter User @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockedBy", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockedUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+}
+
+// ============================================
+// CHALLENGES & GAMIFICATION
+// ============================================
+
+enum ChallengeType {
+  THIRTY_DAY
+  STEP
+  STRENGTH
+  CUSTOM
+}
+
+model Challenge {
+  id           String        @id @default(cuid())
+  tenantId     String
+  title        String
+  description  String?
+  type         ChallengeType
+  startDate    DateTime
+  endDate      DateTime
+  goal         Json
+  badgeImage   String?
+  pointsReward Int           @default(0)
+  createdAt    DateTime      @default(now())
+
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id])
+  participants ChallengeParticipant[]
+
+  @@index([tenantId])
+}
+
+model ChallengeParticipant {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  progress    Json     @default("{}")
+  completed   Boolean  @default(false)
+  joinedAt    DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+}
+
+// ============================================
+// QUESTIONNAIRE
+// ============================================
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TEXT
+  SCALE
+  YES_NO
+}
+
+enum QuestionCategory {
+  PHYSICAL_HEALTH
+  MENTAL_HEALTH
+  GOALS
+  LIFESTYLE
+  GENERAL
+}
+
+model Questionnaire {
+  id        String           @id @default(cuid())
+  tenantId  String
+  question  String
+  type      QuestionType     @default(TEXT)
+  options   String[]
+  category  QuestionCategory @default(GENERAL)
+  order     Int              @default(0)
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([tenantId])
+}
+
+// ============================================
+// CMS PAGES
+// ============================================
+
+model CmsPage {
+  id        String   @id @default(cuid())
+  tenantId  String
+  key       String
+  title     String
+  content   String   @default("")
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+}
