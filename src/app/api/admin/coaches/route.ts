@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendCoachApprovalEmail } from "@/lib/email";
 
 export async function GET(req: NextRequest) {
   try {
@@ -132,6 +133,13 @@ export async function PUT(req: NextRequest) {
         data: { role: "COACH" },
       });
     }
+
+    // Send coach approval/denial email (non-blocking)
+    sendCoachApprovalEmail(
+      user.email,
+      user.fullName,
+      approvalStatus === "APPROVED"
+    ).catch((err) => console.error("Coach approval email failed:", err));
 
     return NextResponse.json({
       success: true,

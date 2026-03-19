@@ -34,6 +34,7 @@ import {
   Users,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
+import { useUpload } from "@/hooks/use-upload";
 
 // ---- Types ----
 interface WorkoutPlan {
@@ -142,6 +143,7 @@ function formatDate(iso: string) {
 export default function AdminContentPage() {
   const [activeTab, setActiveTab] = useState("categories");
   const [searchQuery, setSearchQuery] = useState("");
+  const { upload: uploadFile, uploading: fileUploading } = useUpload();
 
   // ---- Workouts ----
   const { data: workoutsData, loading: workoutsLoading, error: workoutsError } = useApi<WorkoutsApiResponse>(
@@ -843,8 +845,16 @@ export default function AdminContentPage() {
                 <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={bookForm.language} onChange={e => setBookForm({ ...bookForm, language: e.target.value })} />
               </div>
               <div>
-                <Label>Cover Picture (URL)</Label>
-                <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={bookForm.coverImage} onChange={e => setBookForm({ ...bookForm, coverImage: e.target.value })} placeholder="https://..." />
+                <Label>Cover Picture</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input className="bg-zinc-800 border-zinc-700 text-white flex-1" value={bookForm.coverImage} onChange={e => setBookForm({ ...bookForm, coverImage: e.target.value })} placeholder="URL or upload..." />
+                  <label className="shrink-0">
+                    <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer" asChild>
+                      <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
+                    </Button>
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const r = await uploadFile(f, "book-covers", "image"); setBookForm(prev => ({ ...prev, coverImage: r.url })); } catch {} } }} />
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -898,8 +908,16 @@ export default function AdminContentPage() {
                 <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={albumForm.category} onChange={e => setAlbumForm({ ...albumForm, category: e.target.value })} placeholder="e.g. Workout" />
               </div>
               <div>
-                <Label>Album Image (URL)</Label>
-                <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={albumForm.coverImage} onChange={e => setAlbumForm({ ...albumForm, coverImage: e.target.value })} placeholder="https://..." />
+                <Label>Album Image</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input className="bg-zinc-800 border-zinc-700 text-white flex-1" value={albumForm.coverImage} onChange={e => setAlbumForm({ ...albumForm, coverImage: e.target.value })} placeholder="URL or upload..." />
+                  <label className="shrink-0">
+                    <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer" asChild>
+                      <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
+                    </Button>
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const r = await uploadFile(f, "album-covers", "image"); setAlbumForm(prev => ({ ...prev, coverImage: r.url })); } catch {} } }} />
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -961,8 +979,16 @@ export default function AdminContentPage() {
               </div>
             </div>
             <div>
-              <Label>Song File (URL)</Label>
-              <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={songForm.audioUrl} onChange={e => setSongForm({ ...songForm, audioUrl: e.target.value })} placeholder="https://..." />
+              <Label>Song File</Label>
+              <div className="flex gap-2 mt-1">
+                <Input className="bg-zinc-800 border-zinc-700 text-white flex-1" value={songForm.audioUrl} onChange={e => setSongForm({ ...songForm, audioUrl: e.target.value })} placeholder="URL or upload..." />
+                <label className="shrink-0">
+                  <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer" asChild>
+                    <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
+                  </Button>
+                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const r = await uploadFile(f, "songs", "audio"); setSongForm(prev => ({ ...prev, audioUrl: r.url })); } catch {} } }} />
+                </label>
+              </div>
             </div>
             <div>
               <Label>Song Lyrics</Label>

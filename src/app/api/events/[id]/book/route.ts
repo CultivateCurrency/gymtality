@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEventBookingEmail, sendWaitlistPromotionEmail } from "@/lib/email";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -74,6 +75,21 @@ export async function POST(req: NextRequest, context: RouteContext) {
       });
     }
 
+    // Send booking confirmation email (non-blocking)
+    const bookedUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (bookedUser) {
+      const eventDate = new Date(event.startTime).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+      const eventTime = new Date(event.startTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+      sendEventBookingEmail(
+        bookedUser.email,
+        event.title,
+        eventDate,
+        eventTime,
+        event.location || undefined
+      ).catch((err) => console.error("Booking email failed:", err));
+    }
+
     return NextResponse.json(
       { success: true, data: booking },
       { status: 201 }
@@ -141,6 +157,22 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
           where: { id: nextWaitlisted.id },
           data: { status: "BOOKED" },
         });
+
+        // Notify promoted user (non-blocking)
+        const promotedUser = await prisma.user.findUnique({
+          where: { id: nextWaitlisted.userId },
+        });
+        if (promotedUser && event) {
+          const eventDate = new Date(event.startTime).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+          const eventTime = new Date(event.startTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+          sendWaitlistPromotionEmail(
+            promotedUser.email,
+            event.title,
+            eventDate,
+            eventTime
+          ).catch((err) => console.error("Waitlist promotion email failed:", err));
+        }
       }
     }
 

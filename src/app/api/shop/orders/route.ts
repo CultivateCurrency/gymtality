@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 // GET /api/shop/orders — user's orders
 export async function GET(req: NextRequest) {
@@ -140,6 +141,17 @@ export async function POST(req: NextRequest) {
 
       return newOrder;
     });
+
+    // Send order confirmation email (non-blocking)
+    const buyer = await prisma.user.findUnique({ where: { id: userId } });
+    if (buyer) {
+      sendOrderConfirmationEmail(
+        buyer.email,
+        order.id,
+        `$${(order.total / 100).toFixed(2)}`,
+        order.items.length
+      ).catch((err) => console.error("Order confirmation email failed:", err));
+    }
 
     return NextResponse.json(
       { success: true, data: order },

@@ -51,6 +51,7 @@ model Tenant {
   categories      Category[]
   streams         Stream[]
   challenges      Challenge[]
+  goals           Goal[]
 
   @@index([slug])
   @@index([customDomain])
@@ -112,6 +113,7 @@ model User {
   saves         Save[]
   affiliateLinks AffiliateLink[]
   notifications  Notification[]
+  goals          Goal[]
 
   reportsFiled   Report[]  @relation("ReportsFiled")
   blockedUsers   Block[]   @relation("BlockedBy")
@@ -129,6 +131,7 @@ model User {
 model UserProfile {
   id                    String   @id @default(cuid())
   userId                String   @unique
+  bio                   String?
   age                   Int?
   gender                String?
   dob                   DateTime?
@@ -171,6 +174,7 @@ model CoachProfile {
   approvalStatus  ApprovalStatus @default(PENDING)
   approvedAt      DateTime?
   commissionRate  Float          @default(0.80)
+  stripeAccountId String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -747,6 +751,32 @@ model AffiliateLink {
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// GOALS
+// ============================================
+
+model Goal {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  type        String   // weight, strength, cardio, custom
+  title       String
+  target      Float
+  current     Float    @default(0)
+  unit        String   @default("")
+  targetDate  DateTime?
+  action      String?
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
 }
 
 // ============================================

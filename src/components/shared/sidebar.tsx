@@ -18,6 +18,13 @@ import {
   HelpCircle,
   BarChart3,
   FileText,
+  Target,
+  Activity,
+  Search,
+  Gift,
+  Heart,
+  Video,
+  Bell,
 } from "lucide-react";
 
 interface NavItem {
@@ -29,12 +36,18 @@ interface NavItem {
 const memberNav: NavItem[] = [
   { label: "Dashboard", href: "/member/dashboard", icon: LayoutDashboard },
   { label: "Workouts", href: "/member/workouts", icon: Dumbbell },
+  { label: "Explore", href: "/member/explore", icon: Search },
   { label: "Community", href: "/member/community", icon: Users },
   { label: "Events", href: "/member/events", icon: Calendar },
   { label: "Streaming", href: "/member/streaming", icon: Radio },
   { label: "Music", href: "/member/music", icon: Music },
   { label: "Shop", href: "/member/shop", icon: ShoppingBag },
   { label: "Messages", href: "/member/messages", icon: MessageCircle },
+  { label: "Goals", href: "/member/goals", icon: Target },
+  { label: "Activity", href: "/member/activity", icon: Activity },
+  { label: "Donations", href: "/member/donations", icon: Heart },
+  { label: "Referrals", href: "/member/referrals", icon: Gift },
+  { label: "Help & Support", href: "/member/support", icon: HelpCircle },
   { label: "Profile", href: "/member/profile", icon: User },
   { label: "Settings", href: "/member/settings", icon: Settings },
 ];
@@ -43,9 +56,13 @@ const coachNav: NavItem[] = [
   { label: "Dashboard", href: "/coach/dashboard", icon: LayoutDashboard },
   { label: "Clients", href: "/coach/clients", icon: Users },
   { label: "Content", href: "/coach/content", icon: Dumbbell },
+  { label: "Videos", href: "/coach/videos", icon: Video },
   { label: "Schedule", href: "/coach/schedule", icon: Calendar },
   { label: "Streaming", href: "/coach/streaming", icon: Radio },
   { label: "Earnings", href: "/coach/earnings", icon: Trophy },
+  { label: "Donations", href: "/coach/donations", icon: Heart },
+  { label: "Notifications", href: "/coach/notifications", icon: Bell },
+  { label: "Help & Support", href: "/coach/help", icon: HelpCircle },
   { label: "Settings", href: "/coach/settings", icon: Settings },
 ];
 

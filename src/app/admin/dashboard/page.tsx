@@ -23,6 +23,29 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
+import dynamic from "next/dynamic";
+
+const RevenueAreaChart = dynamic(() => import("@/components/charts").then((m) => m.RevenueAreaChart), { ssr: false, loading: () => <div className="h-48 flex items-center justify-center text-zinc-500">Loading...</div> });
+const ActivityBarChart = dynamic(() => import("@/components/charts").then((m) => m.ActivityBarChart), { ssr: false, loading: () => <div className="h-48 flex items-center justify-center text-zinc-500">Loading...</div> });
+
+const revenueData = [
+  { month: "Oct", revenue: 2400 },
+  { month: "Nov", revenue: 3200 },
+  { month: "Dec", revenue: 2800 },
+  { month: "Jan", revenue: 4100 },
+  { month: "Feb", revenue: 3700 },
+  { month: "Mar", revenue: 4600 },
+];
+
+const activityData = [
+  { day: "Mon", users: 120 },
+  { day: "Tue", users: 180 },
+  { day: "Wed", users: 150 },
+  { day: "Thu", users: 210 },
+  { day: "Fri", users: 190 },
+  { day: "Sat", users: 280 },
+  { day: "Sun", users: 240 },
+];
 
 interface AdminAnalytics {
   totalUsers: number;
@@ -179,8 +202,8 @@ export default function AdminDashboard() {
             <CardDescription className="text-zinc-400">Monthly revenue breakdown</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-48 flex items-center justify-center text-zinc-500">
-              Revenue chart will appear here
+            <div className="h-48">
+              <RevenueAreaChart data={revenueData} />
             </div>
           </CardContent>
         </Card>
@@ -194,8 +217,8 @@ export default function AdminDashboard() {
             <CardDescription className="text-zinc-400">Active users over time</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-48 flex items-center justify-center text-zinc-500">
-              Activity chart will appear here
+            <div className="h-48">
+              <ActivityBarChart data={activityData} />
             </div>
           </CardContent>
         </Card>

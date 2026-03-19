@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { apiFetch } from "@/hooks/use-api";
+import { useUpload } from "@/hooks/use-upload";
 import {
   Card,
   CardContent,
@@ -56,6 +57,8 @@ export default function CoachSettingsPage() {
     { id: number; name: string; reason: string; blockedAt: string }[]
   >([]);
   const [saving, setSaving] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const { upload, uploading } = useUpload();
 
   useEffect(() => {
     if (session?.user) {
@@ -72,6 +75,27 @@ export default function CoachSettingsPage() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    try {
+      const result = await upload(file, "profile-photos", "image");
+      setProfilePhoto(result.url);
+    } catch {
+      // error handled by hook
+    }
+  };
+
+  const handleCertUpload = async (file: File) => {
+    try {
+      const result = await upload(file, "certifications", "document");
+      setCertifications([
+        ...certifications,
+        { name: result.filename, status: "Pending Review", uploadedAt: new Date().toLocaleDateString() },
+      ]);
+    } catch {
+      // error handled by hook
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -120,13 +144,30 @@ export default function CoachSettingsPage() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Avatar className="h-20 w-20">
-                <AvatarFallback className="bg-orange-500/20 text-orange-500 text-2xl font-bold">
-                  {getInitials(fullName)}
-                </AvatarFallback>
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <AvatarFallback className="bg-orange-500/20 text-orange-500 text-2xl font-bold">
+                    {getInitials(fullName)}
+                  </AvatarFallback>
+                )}
               </Avatar>
-              <button className="absolute bottom-0 right-0 p-1.5 bg-orange-500 rounded-full hover:bg-orange-600 transition">
-                <Camera className="h-3 w-3 text-white" />
-              </button>
+              <label className="absolute bottom-0 right-0 p-1.5 bg-orange-500 rounded-full hover:bg-orange-600 transition cursor-pointer">
+                {uploading ? (
+                  <Loader2 className="h-3 w-3 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-3 w-3 text-white" />
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handlePhotoUpload(file);
+                  }}
+                />
+              </label>
             </div>
             <div>
               <p className="text-sm text-zinc-300">Profile Picture</p>
@@ -234,13 +275,24 @@ export default function CoachSettingsPage() {
             </p>
           )}
 
-          <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-orange-500/50 transition cursor-pointer">
-            <Upload className="h-8 w-8 text-zinc-500 mx-auto mb-2" />
-            <p className="text-sm text-zinc-400">Upload new certification</p>
-            <p className="text-xs text-zinc-600 mt-1">
-              PDF, JPG, or PNG up to 10MB
-            </p>
-          </div>
+          <label className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-orange-500/50 transition cursor-pointer block">
+            {uploading ? (
+              <Loader2 className="h-8 w-8 text-orange-500 mx-auto mb-2 animate-spin" />
+            ) : (
+              <Upload className="h-8 w-8 text-zinc-500 mx-auto mb-2" />
+            )}
+            <p className="text-sm text-zinc-400">{uploading ? "Uploading..." : "Upload new certification"}</p>
+            <p className="text-xs text-zinc-600 mt-1">PDF up to 20MB</p>
+            <input
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleCertUpload(file);
+              }}
+            />
+          </label>
         </CardContent>
       </Card>
 

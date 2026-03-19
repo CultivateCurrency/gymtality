@@ -3,6 +3,16 @@
 import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useApi, useMutation } from "@/hooks/use-api";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
+const viewerData = [
+  { stream: "Stream 1", viewers: 45 },
+  { stream: "Stream 2", viewers: 82 },
+  { stream: "Stream 3", viewers: 63 },
+  { stream: "Stream 4", viewers: 110 },
+  { stream: "Stream 5", viewers: 95 },
+  { stream: "Stream 6", viewers: 130 },
+];
 import {
   Card,
   CardContent,
@@ -499,8 +509,15 @@ export default function CoachStreamingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center text-zinc-500 border border-dashed border-zinc-800 rounded-lg">
-            Viewer analytics charts will be rendered here
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={viewerData}>
+                <XAxis dataKey="stream" tick={{ fill: "#71717a", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#71717a", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8, color: "#fff" }} />
+                <Bar dataKey="viewers" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>

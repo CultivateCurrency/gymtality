@@ -24,6 +24,30 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
+import dynamic from "next/dynamic";
+
+const GrowthLineChart = dynamic(() => import("@/components/charts").then((m) => m.GrowthLineChart), { ssr: false, loading: () => <div className="h-64 flex items-center justify-center text-zinc-500">Loading...</div> });
+const RevenueAreaChart = dynamic(() => import("@/components/charts").then((m) => m.RevenueAreaChart), { ssr: false, loading: () => <div className="h-64 flex items-center justify-center text-zinc-500">Loading...</div> });
+const SmallBarChart = dynamic(() => import("@/components/charts").then((m) => m.SmallBarChart), { ssr: false, loading: () => <div className="h-32 flex items-center justify-center text-zinc-500">Loading...</div> });
+const SmallLineChart = dynamic(() => import("@/components/charts").then((m) => m.SmallLineChart), { ssr: false, loading: () => <div className="h-32 flex items-center justify-center text-zinc-500">Loading...</div> });
+
+const userGrowthData = [
+  { month: "Oct", users: 320 },
+  { month: "Nov", users: 480 },
+  { month: "Dec", users: 560 },
+  { month: "Jan", users: 720 },
+  { month: "Feb", users: 890 },
+  { month: "Mar", users: 1150 },
+];
+
+const revenueTrendData = [
+  { month: "Oct", revenue: 1800 },
+  { month: "Nov", revenue: 2900 },
+  { month: "Dec", revenue: 3400 },
+  { month: "Jan", revenue: 4200 },
+  { month: "Feb", revenue: 3800 },
+  { month: "Mar", revenue: 5100 },
+];
 
 interface TopTrainer {
   coach: {
@@ -190,8 +214,8 @@ export default function AdminAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-zinc-500 border border-dashed border-zinc-800 rounded-lg">
-              User activity chart placeholder
+            <div className="h-64">
+              <GrowthLineChart data={userGrowthData} />
             </div>
           </CardContent>
         </Card>
@@ -204,8 +228,8 @@ export default function AdminAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-zinc-500 border border-dashed border-zinc-800 rounded-lg">
-              Revenue trend chart placeholder
+            <div className="h-64">
+              <RevenueAreaChart data={revenueTrendData} id="revGradAnalytics" />
             </div>
           </CardContent>
         </Card>
@@ -315,8 +339,8 @@ export default function AdminAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center h-32 text-zinc-500 text-sm border border-dashed border-zinc-800 rounded-lg">
-              No data available
+            <div className="h-32">
+              <SmallBarChart data={[{ week: "W1", attended: 18 }, { week: "W2", attended: 24 }, { week: "W3", attended: 21 }, { week: "W4", attended: 30 }]} dataKey="attended" />
             </div>
           </CardContent>
         </Card>
@@ -352,8 +376,14 @@ export default function AdminAnalyticsPage() {
                 <p className="text-xs text-zinc-400">New Members</p>
               </div>
             </div>
-            <div className="h-32 flex items-center justify-center text-zinc-500 border border-dashed border-zinc-800 rounded-lg">
-              Engagement trend chart placeholder
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[{ week: "W1", engagement: 340 }, { week: "W2", engagement: 520 }, { week: "W3", engagement: 480 }, { week: "W4", engagement: 610 }]}>
+                  <XAxis dataKey="week" tick={{ fill: "#71717a", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8, color: "#fff" }} />
+                  <Line type="monotone" dataKey="engagement" stroke="#a855f7" strokeWidth={2} dot={{ fill: "#a855f7", r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>

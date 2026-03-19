@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireRole(req, ['ADMIN', 'OWNER', 'SUPER_ADMIN'])
     if (auth instanceof NextResponse) return auth
 
-    const tenantId = req.headers.get('x-tenant-id') || 'default'
+    const tenantId = req.headers.get('x-tenant-id') || 'default-tenant'
     const { searchParams } = new URL(req.url)
     const key = searchParams.get('key')
 
@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest) {
     const auth = await requireRole(req, ['ADMIN', 'OWNER', 'SUPER_ADMIN'])
     if (auth instanceof NextResponse) return auth
 
-    const tenantId = req.headers.get('x-tenant-id') || 'default'
+    const tenantId = req.headers.get('x-tenant-id') || 'default-tenant'
     const body = await req.json()
     const { key, content } = body
 

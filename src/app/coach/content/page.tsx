@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useApi, useMutation } from "@/hooks/use-api";
+import { useUpload } from "@/hooks/use-upload";
 import {
   Card,
   CardContent,
@@ -19,6 +20,7 @@ import {
   Plus,
   Dumbbell,
   Video,
+  CheckCircle2,
   Brain,
   Leaf,
   Apple,
@@ -76,6 +78,7 @@ export default function CoachContentPage() {
   const { data: session } = useSession();
   const { data: workoutsData, loading, error, refetch } = useApi<WorkoutsResponse>("/api/workouts");
   const { mutate: publishPlan, loading: publishing, error: publishError } = useMutation<WorkoutPlan>("/api/workouts", "POST");
+  const { upload, uploading: uploadingVideo } = useUpload();
 
   const [planName, setPlanName] = useState("");
   const [planDescription, setPlanDescription] = useState("");
@@ -84,7 +87,7 @@ export default function CoachContentPage() {
   const [difficulty, setDifficulty] = useState("Beginner");
   const [repetitions, setRepetitions] = useState(false);
   const [exercises, setExercises] = useState([
-    { name: "", description: "", bodyParts: [] as string[], equipment: "", duration: "", sets: "", reps: "", video: null },
+    { name: "", description: "", bodyParts: [] as string[], equipment: "", duration: "", sets: "", reps: "", videoUrl: "" },
   ]);
 
   const updateExercise = (index: number, field: string, value: string | string[]) => {
@@ -99,10 +102,19 @@ export default function CoachContentPage() {
     updateExercise(index, "bodyParts", parts);
   };
 
+  const handleVideoUpload = async (index: number, file: File) => {
+    try {
+      const result = await upload(file, "exercise-videos", "video");
+      updateExercise(index, "videoUrl", result.url);
+    } catch {
+      // error displayed by hook
+    }
+  };
+
   const addExercise = () => {
     setExercises([
       ...exercises,
-      { name: "", description: "", bodyParts: [], equipment: "", duration: "", sets: "", reps: "", video: null },
+      { name: "", description: "", bodyParts: [], equipment: "", duration: "", sets: "", reps: "", videoUrl: "" },
     ]);
   };
 
@@ -124,7 +136,7 @@ export default function CoachContentPage() {
       setSelectedCategory("Workouts");
       setDifficulty("Beginner");
       setRepetitions(false);
-      setExercises([{ name: "", description: "", bodyParts: [], equipment: "", duration: "", sets: "", reps: "", video: null }]);
+      setExercises([{ name: "", description: "", bodyParts: [], equipment: "", duration: "", sets: "", reps: "", videoUrl: "" }]);
       refetch();
     }
   };
@@ -411,18 +423,46 @@ export default function CoachContentPage() {
                 </div>
               </div>
 
-              {/* Video Upload Placeholder */}
+              {/* Video Upload */}
               <div className="space-y-1.5">
                 <label className="text-sm text-zinc-300">Exercise Video</label>
-                <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-orange-500/50 transition cursor-pointer">
-                  <Video className="h-8 w-8 text-zinc-500 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-400">
-                    Click to upload or drag & drop
-                  </p>
-                  <p className="text-xs text-zinc-600 mt-1">
-                    MP4, MOV up to 500MB
-                  </p>
-                </div>
+                {exercise.videoUrl ? (
+                  <div className="flex items-center gap-3 p-3 bg-zinc-800 rounded-lg border border-green-500/30">
+                    <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                    <p className="text-sm text-green-400 truncate flex-1">Video uploaded</p>
+                    <button
+                      onClick={() => updateExercise(index, "videoUrl", "")}
+                      className="text-zinc-500 hover:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor={`video-${index}`}
+                    className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-orange-500/50 transition cursor-pointer block"
+                  >
+                    {uploadingVideo ? (
+                      <Loader2 className="h-8 w-8 text-orange-500 mx-auto mb-2 animate-spin" />
+                    ) : (
+                      <Video className="h-8 w-8 text-zinc-500 mx-auto mb-2" />
+                    )}
+                    <p className="text-sm text-zinc-400">
+                      {uploadingVideo ? "Uploading..." : "Click to upload or drag & drop"}
+                    </p>
+                    <p className="text-xs text-zinc-600 mt-1">MP4, MOV up to 500MB</p>
+                    <input
+                      id={`video-${index}`}
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleVideoUpload(index, file);
+                      }}
+                    />
+                  </label>
+                )}
               </div>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyOtpSchema } from "@/lib/validations";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
         otpExpiresAt: null,
       },
     });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user.email, user.fullName).catch((err) =>
+      console.error("Welcome email failed:", err)
+    );
 
     return NextResponse.json({
       success: true,

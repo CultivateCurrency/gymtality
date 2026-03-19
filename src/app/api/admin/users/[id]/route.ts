@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendAccountStatusEmail } from "@/lib/email";
 
 export async function PUT(
   req: NextRequest,
@@ -50,6 +51,15 @@ export async function PUT(
         updatedAt: true,
       },
     });
+
+    // Send account status email on block/unblock (non-blocking)
+    if (action === "block" || action === "unblock") {
+      sendAccountStatusEmail(
+        user.email,
+        user.fullName,
+        action === "block"
+      ).catch((err) => console.error("Account status email failed:", err));
+    }
 
     return NextResponse.json({
       success: true,

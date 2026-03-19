@@ -29,8 +29,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: streams,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      data: { streams, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } },
     });
   } catch (error) {
     console.error("[GET /api/streaming]", error);

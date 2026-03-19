@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations";
+import { sendOTPEmail } from "@/lib/email";
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -33,8 +34,8 @@ export async function POST(req: NextRequest) {
       data: { otpCode, otpExpiresAt },
     });
 
-    // TODO: Send OTP via AWS SES
-    console.log(`[DEV] Password reset OTP for ${email}: ${otpCode}`);
+    // Send OTP email via Resend
+    await sendOTPEmail(email, otpCode, "reset");
 
     return NextResponse.json({
       success: true,

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireRole(req, ['ADMIN', 'OWNER', 'SUPER_ADMIN'])
     if (auth instanceof NextResponse) return auth
 
-    const tenantId = req.headers.get('x-tenant-id') || 'default'
+    const tenantId = req.headers.get('x-tenant-id') || 'default-tenant'
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type') || 'overview'
 

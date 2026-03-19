@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signUpSchema } from "@/lib/validations";
+import { sendOTPEmail, sendReferralRewardEmail } from "@/lib/email";
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -93,9 +94,29 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // TODO: Send OTP via AWS SES in production
-    // For development, return OTP in response
-    console.log(`[DEV] OTP for ${validated.email}: ${otpCode}`);
+    // Track referral conversion if referral code provided
+    if (body.referralCode) {
+      const affiliateLink = await prisma.affiliateLink.findUnique({
+        where: { code: body.referralCode },
+        include: { user: true },
+      });
+      if (affiliateLink) {
+        await prisma.affiliateLink.update({
+          where: { id: affiliateLink.id },
+          data: { conversions: { increment: 1 } },
+        });
+        // Notify referrer (non-blocking)
+        sendReferralRewardEmail(
+          affiliateLink.user.email,
+          affiliateLink.user.fullName,
+          validated.fullName,
+          "$5.00"
+        ).catch((err) => console.error("Referral reward email failed:", err));
+      }
+    }
+
+    // Send OTP email via Resend
+    await sendOTPEmail(validated.email, otpCode, "verify");
 
     return NextResponse.json(
       {

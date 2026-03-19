@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendSubscriptionEmail } from "@/lib/email";
 
 export async function GET(req: NextRequest) {
   try {
@@ -127,6 +128,18 @@ export async function PUT(req: NextRequest) {
         },
       },
     });
+
+    // Notify user about subscription change (non-blocking)
+    if (updatedSubscription.user && plan) {
+      const planPrices: Record<string, string> = { BASIC: "$9.99", PREMIUM: "$19.99", ELITE: "$39.99" };
+      sendSubscriptionEmail(
+        updatedSubscription.user.email,
+        updatedSubscription.user.fullName,
+        plan,
+        planPrices[plan] || "$0.00",
+        "month"
+      ).catch((err) => console.error("Subscription email failed:", err));
+    }
 
     return NextResponse.json({
       success: true,

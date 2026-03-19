@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireRole(req, ['ADMIN', 'OWNER', 'SUPER_ADMIN'])
     if (auth instanceof NextResponse) return auth
 
-    const tenantId = req.headers.get('x-tenant-id') || 'default'
+    const tenantId = req.headers.get('x-tenant-id') || 'default-tenant'
 
     const categories = await prisma.category.findMany({
       where: { tenantId, parentId: null },
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireRole(req, ['ADMIN', 'OWNER', 'SUPER_ADMIN'])
     if (auth instanceof NextResponse) return auth
 
-    const tenantId = req.headers.get('x-tenant-id') || 'default'
+    const tenantId = req.headers.get('x-tenant-id') || 'default-tenant'
     const body = await req.json()
     const { name, description, icon, parentId, order } = body
 

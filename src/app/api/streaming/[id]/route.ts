@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendStreamNotificationEmail } from "@/lib/email";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -75,6 +76,24 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       where: { id },
       data,
     });
+
+    // Notify followers when coach goes live (non-blocking)
+    if (status === "LIVE" && existing.status === "SCHEDULED") {
+      const coach = await prisma.user.findUnique({ where: { id: stream.coachId } });
+      if (coach) {
+        const followers = await prisma.follow.findMany({
+          where: { followingId: coach.id },
+          include: { follower: { select: { email: true } } },
+        });
+        for (const f of followers) {
+          sendStreamNotificationEmail(
+            f.follower.email,
+            coach.fullName,
+            stream.title
+          ).catch((err) => console.error("Stream notification email failed:", err));
+        }
+      }
+    }
 
     return NextResponse.json({ success: true, data: stream });
   } catch (error) {
