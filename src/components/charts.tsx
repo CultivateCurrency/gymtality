@@ -79,7 +79,7 @@ export function GrowthLineChart({ data, dataKey = "users", lineColor = "#3b82f6"
 
 // ─── Earnings Stacked Bar Chart ───────────────────────────────────────────
 
-export function EarningsBarChart({ data }: { data: { month: string; sessions: number; packages: number; classes: number; content: number }[] }) {
+export function EarningsBarChart({ data }: { data: { month: string; sessions: number; classes: number; total: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
@@ -88,9 +88,8 @@ export function EarningsBarChart({ data }: { data: { month: string; sessions: nu
         <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `$${v}`} />
         <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
         <Bar dataKey="sessions" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Sessions" />
-        <Bar dataKey="packages" fill="#22c55e" radius={[4, 4, 0, 0]} name="Packages" />
         <Bar dataKey="classes" fill="#a855f7" radius={[4, 4, 0, 0]} name="Classes" />
-        <Bar dataKey="content" fill="#f97316" radius={[4, 4, 0, 0]} name="Content Sales" />
+        <Bar dataKey="total" fill="#f97316" radius={[4, 4, 0, 0]} name="Total" />
       </BarChart>
     </ResponsiveContainer>
   );

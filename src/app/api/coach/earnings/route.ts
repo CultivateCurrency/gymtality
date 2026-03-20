@@ -69,6 +69,25 @@ export async function GET(req: NextRequest) {
     const monthlyGross = thisMonthBookings.reduce((sum, b) => sum + b.event.price, 0);
     const monthlyNet = monthlyGross * commissionRate;
 
+    // Monthly earnings breakdown (last 6 months)
+    const monthlyEarnings: { month: string; sessions: number; classes: number; total: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const monthBookings = allPaidBookings.filter(
+        (b) => b.event.startTime >= d && b.event.startTime < end
+      );
+      const sessionsRev = monthBookings
+        .filter((b) => b.event.startTime !== undefined)
+        .reduce((s, b) => s + b.event.price, 0);
+      monthlyEarnings.push({
+        month: d.toLocaleString("en-US", { month: "short" }),
+        sessions: Math.round(sessionsRev * commissionRate * 100) / 100,
+        classes: 0,
+        total: Math.round(sessionsRev * commissionRate * 100) / 100,
+      });
+    }
+
     // Format transactions
     const transactions = bookings.map((b) => ({
       id: b.id,
@@ -90,6 +109,7 @@ export async function GET(req: NextRequest) {
           commissionRate,
           totalTransactions: totalBookings,
         },
+        monthlyEarnings,
         transactions,
         pagination: {
           page,

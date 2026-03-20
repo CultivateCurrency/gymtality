@@ -107,6 +107,47 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    // Monthly revenue (last 6 months)
+    const monthlyRevenue: { month: string; revenue: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const monthOrders = await prisma.order.aggregate({
+        where: {
+          user: { tenantId },
+          status: "PAID",
+          createdAt: { gte: d, lt: end },
+        },
+        _sum: { total: true },
+      });
+      monthlyRevenue.push({
+        month: d.toLocaleString("en-US", { month: "short" }),
+        revenue: monthOrders._sum.total || 0,
+      });
+    }
+
+    // Daily user activity (last 7 days) — users who logged a workout session
+    const dailyActivity: { day: string; users: number }[] = [];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = new Date(now);
+      dayStart.setDate(now.getDate() - i);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayStart.getDate() + 1);
+      const activeCount = await prisma.workoutSession.groupBy({
+        by: ["userId"],
+        where: {
+          user: { tenantId },
+          startedAt: { gte: dayStart, lt: dayEnd },
+        },
+      }).then((r) => r.length);
+      dailyActivity.push({
+        day: dayNames[dayStart.getDay()],
+        users: activeCount,
+      });
+    }
+
     // Deduplicate top trainers (group by coach)
     const trainerMap = new Map<string, { coach: any; totalSessions: number }>();
     for (const plan of topTrainers) {
@@ -138,6 +179,8 @@ export async function GET(req: NextRequest) {
         usersByRole,
         pendingCoaches,
         pendingReports,
+        monthlyRevenue,
+        dailyActivity,
       },
     });
   } catch (error: any) {

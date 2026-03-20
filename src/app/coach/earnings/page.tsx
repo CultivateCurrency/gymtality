@@ -28,15 +28,6 @@ import dynamic from "next/dynamic";
 
 const EarningsBarChart = dynamic(() => import("@/components/charts").then((m) => m.EarningsBarChart), { ssr: false, loading: () => <div className="h-64 flex items-center justify-center text-zinc-500">Loading...</div> });
 
-const earningsChartData = [
-  { month: "Oct", sessions: 800, packages: 400, classes: 300, content: 150 },
-  { month: "Nov", sessions: 1200, packages: 500, classes: 450, content: 200 },
-  { month: "Dec", sessions: 900, packages: 600, classes: 350, content: 180 },
-  { month: "Jan", sessions: 1400, packages: 700, classes: 500, content: 250 },
-  { month: "Feb", sessions: 1100, packages: 550, classes: 420, content: 300 },
-  { month: "Mar", sessions: 1600, packages: 800, classes: 600, content: 350 },
-];
-
 interface EarningsTransaction {
   id: string;
   description: string;
@@ -55,6 +46,7 @@ interface EarningsData {
     commissionRate: number;
     totalTransactions: number;
   };
+  monthlyEarnings: { month: string; sessions: number; classes: number; total: number }[];
   transactions: EarningsTransaction[];
   pagination: Record<string, unknown>;
 }
@@ -222,7 +214,7 @@ export default function CoachEarningsPage() {
         </CardHeader>
         <CardContent>
           <div className="h-64">
-            <EarningsBarChart data={earningsChartData} />
+            <EarningsBarChart data={data?.monthlyEarnings ?? []} />
           </div>
         </CardContent>
       </Card>
