@@ -118,7 +118,7 @@ export default function CoachHelpPage() {
               </div>
               <div>
                 <p className="text-sm text-zinc-400">Email Support</p>
-                <p className="text-white font-medium">support@forgefitness.com</p>
+                <p className="text-white font-medium">support@gymtality.fit</p>
               </div>
             </div>
           </CardContent>
@@ -131,7 +131,7 @@ export default function CoachHelpPage() {
               </div>
               <div>
                 <p className="text-sm text-zinc-400">Phone Support</p>
-                <p className="text-white font-medium">1-800-FORGE-FIT</p>
+                <p className="text-white font-medium">1-800-GYMTALITY</p>
               </div>
             </div>
           </CardContent>

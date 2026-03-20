@@ -12,7 +12,7 @@ export default function TermsPage() {
             1. Acceptance of Terms
           </h2>
           <p className="text-zinc-300 leading-relaxed">
-            By accessing or using the Forge Fitness platform, including our
+            By accessing or using the Gymtality platform, including our
             website, mobile applications, and all related services, you agree to
             be bound by these Terms and Conditions. If you do not agree to these
             terms, you may not use our services.
@@ -47,7 +47,7 @@ export default function TermsPage() {
           </h2>
           <p className="text-zinc-300 leading-relaxed">
             You retain ownership of any content you submit, post, or display on
-            the platform. By posting content, you grant Forge Fitness a
+            the platform. By posting content, you grant Gymtality a
             non-exclusive, worldwide, royalty-free license to use, display,
             reproduce, and distribute your content in connection with operating
             the platform.
@@ -131,19 +131,19 @@ export default function TermsPage() {
             7. Limitation of Liability
           </h2>
           <p className="text-zinc-300 leading-relaxed">
-            Forge Fitness provides the platform on an &ldquo;as is&rdquo; and
+            Gymtality provides the platform on an &ldquo;as is&rdquo; and
             &ldquo;as available&rdquo; basis. We make no warranties, express or
             implied, regarding the reliability, accuracy, or availability of the
             platform.
           </p>
           <p className="text-zinc-300 leading-relaxed">
-            To the maximum extent permitted by law, Forge Fitness shall not be
+            To the maximum extent permitted by law, Gymtality shall not be
             liable for any indirect, incidental, special, consequential, or
             punitive damages, including but not limited to loss of profits, data,
             or other intangible losses.
           </p>
           <p className="text-zinc-300 leading-relaxed">
-            Forge Fitness is not responsible for any injuries sustained while
+            Gymtality is not responsible for any injuries sustained while
             performing workouts or exercises found on the platform. Users should
             consult with a healthcare professional before beginning any new
             fitness program.
@@ -155,8 +155,8 @@ export default function TermsPage() {
             8. Intellectual Property
           </h2>
           <p className="text-zinc-300 leading-relaxed">
-            The Forge Fitness name, logo, and all related branding are the
-            property of Forge Fitness. The platform, including its design,
+            The Gymtality name, logo, and all related branding are the
+            property of Gymtality. The platform, including its design,
             features, and functionality, is protected by copyright, trademark,
             and other intellectual property laws.
           </p>
@@ -193,8 +193,8 @@ export default function TermsPage() {
             contact us at:
           </p>
           <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300">
-            <p>Email: legal@forgefitness.com</p>
-            <p>Phone: 1-800-FORGE-FIT</p>
+            <p>Email: legal@gymtality.fit</p>
+            <p>Phone: 1-800-GYMTALITY</p>
           </div>
         </section>
       </div>

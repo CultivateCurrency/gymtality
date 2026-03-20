@@ -60,7 +60,7 @@ export default function SupportPage() {
           <CardContent className="pt-6 text-center">
             <Mail className="h-8 w-8 text-orange-500 mx-auto mb-2" />
             <h3 className="text-white font-medium">Email</h3>
-            <p className="text-zinc-400 text-sm mt-1">support@forgefitness.com</p>
+            <p className="text-zinc-400 text-sm mt-1">support@gymtality.fit</p>
           </CardContent>
         </Card>
 

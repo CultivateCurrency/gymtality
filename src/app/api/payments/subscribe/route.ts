@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             product_data: {
               name: `${planConfig.name} Plan`,
-              description: `Forge Fitness ${planConfig.name} — ${interval === "YEARLY" ? "Annual" : "Monthly"} subscription`,
+              description: `Gymtality ${planConfig.name} — ${interval === "YEARLY" ? "Annual" : "Monthly"} subscription`,
             },
             unit_amount: unitAmount,
             recurring: {

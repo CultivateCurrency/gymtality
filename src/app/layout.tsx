@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Forge Fitness",
+  title: "Gymtality",
   description: "Your complete fitness ecosystem — workouts, community, live classes, coaching, music, and more.",
 };
 

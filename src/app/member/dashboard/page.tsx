@@ -181,7 +181,7 @@ export default function MemberDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">0</p>
-                <p className="text-sm text-zinc-400">Forge Points</p>
+                <p className="text-sm text-zinc-400">Gymtality Points</p>
               </div>
             </div>
           </CardContent>

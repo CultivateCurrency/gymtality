@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     // Create an IVS channel for this stream
     let ivsData = { channelArn: "", streamKey: "", ingestEndpoint: "", playbackUrl: "" };
     try {
-      ivsData = await createIvsChannel(`forge-${title.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}`);
+      ivsData = await createIvsChannel(`gymtality-${title.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}`);
     } catch (ivsErr) {
       console.error("[POST /api/streaming] IVS channel creation failed:", ivsErr);
       // Continue without IVS — stream record is still created

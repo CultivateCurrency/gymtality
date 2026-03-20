@@ -5,7 +5,7 @@ export default function AboutPage() {
         {/* Hero */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold">
-            About <span className="text-orange-500">Forge Fitness</span>
+            About <span className="text-orange-500">Gymtality</span>
           </h1>
           <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
             Building the future of fitness, one workout at a time.
@@ -16,14 +16,14 @@ export default function AboutPage() {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-orange-500">Our Mission</h2>
           <p className="text-zinc-300 leading-relaxed">
-            Forge Fitness exists to make world-class fitness accessible to
+            Gymtality exists to make world-class fitness accessible to
             everyone. We connect members with expert coaches, provide powerful
             tools for tracking progress, and build communities that keep people
             motivated on their fitness journey.
           </p>
           <p className="text-zinc-300 leading-relaxed">
             Whether you train at home or in the gym, are just starting out or
-            competing at the highest level, Forge Fitness gives you the platform,
+            competing at the highest level, Gymtality gives you the platform,
             the coaching, and the community to reach your goals.
           </p>
         </section>
@@ -63,7 +63,7 @@ export default function AboutPage() {
               },
               {
                 title: "Progress Tracking",
-                desc: "Log workouts, track your Forge Score, set goals, and see your improvement over time.",
+                desc: "Log workouts, track your Gymtality Score, set goals, and see your improvement over time.",
               },
               {
                 title: "Events & Classes",
@@ -87,7 +87,7 @@ export default function AboutPage() {
         <section className="space-y-6">
           <h2 className="text-2xl font-bold text-orange-500">Our Team</h2>
           <p className="text-zinc-300 leading-relaxed">
-            Forge Fitness is built by a passionate team of fitness enthusiasts,
+            Gymtality is built by a passionate team of fitness enthusiasts,
             engineers, and designers who believe technology can transform the way
             people train, connect, and grow.
           </p>
@@ -118,7 +118,7 @@ export default function AboutPage() {
           <p className="text-zinc-400">
             Ready to start your fitness journey?{" "}
             <a href="/signup" className="text-orange-500 hover:underline font-medium">
-              Join Forge Fitness today.
+              Join Gymtality today.
             </a>
           </p>
         </section>

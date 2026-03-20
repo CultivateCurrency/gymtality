@@ -420,7 +420,7 @@ export default function AdminCommercePage() {
           <div className="space-y-4">
             <div>
               <Label>Product Name *</Label>
-              <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} placeholder="e.g. Forge Fitness T-Shirt" />
+              <Input className="bg-zinc-800 border-zinc-700 text-white mt-1" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} placeholder="e.g. Gymtality T-Shirt" />
             </div>
             <div>
               <Label>Description</Label>

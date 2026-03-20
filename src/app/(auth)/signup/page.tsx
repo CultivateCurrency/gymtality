@@ -77,7 +77,7 @@ export default function SignUpPage() {
       <CardHeader>
         <CardTitle className="text-white text-2xl">Create Account</CardTitle>
         <CardDescription className="text-zinc-400">
-          Join Forge Fitness and start your journey
+          Join Gymtality and start your journey
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

@@ -31,10 +31,10 @@ export default function SplashPage() {
         <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-40">
           <div className="max-w-2xl">
             <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none mb-6">
-              <span className="text-orange-500">FORGE</span> FITNESS
+              <span className="text-orange-500">GYMTALITY</span>
             </h1>
             <p className="text-xl md:text-2xl text-zinc-300 mb-2 font-light">
-              Forged Daily. 24/7.
+              Your Fitness Mentality. 24/7.
             </p>
             <p className="text-lg text-zinc-400 mb-8 max-w-lg">
               Your complete fitness ecosystem — workouts, community, live
@@ -110,7 +110,7 @@ export default function SplashPage() {
       <footer className="border-t border-zinc-800 py-8">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-zinc-500">
-            &copy; {new Date().getFullYear()} Forge Fitness. All rights
+            &copy; {new Date().getFullYear()} Gymtality. All rights
             reserved.
           </p>
           <div className="flex gap-6 text-sm text-zinc-500">

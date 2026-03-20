@@ -6,7 +6,7 @@ import {
 
 // Oracle Cloud Object Storage uses S3-compatible API
 const OCI_NAMESPACE = process.env.OCI_NAMESPACE || "";
-const OCI_BUCKET = process.env.OCI_BUCKET || "forge-fitness-uploads";
+const OCI_BUCKET = process.env.OCI_BUCKET || "gymtality-uploads";
 const OCI_REGION = process.env.OCI_REGION || "us-ashburn-1";
 const OCI_ACCESS_KEY = process.env.OCI_ACCESS_KEY || "";
 const OCI_SECRET_KEY = process.env.OCI_SECRET_KEY || "";

@@ -63,7 +63,7 @@ const CONVERSATIONS: Conversation[] = [
   },
   {
     id: "5",
-    name: "Forge Support",
+    name: "Gymtality Support",
     lastMessage: "Your subscription has been renewed successfully.",
     time: "1d",
     unread: 0,

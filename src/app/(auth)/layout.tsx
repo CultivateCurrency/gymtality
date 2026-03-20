@@ -9,10 +9,9 @@ export default function AuthLayout({
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-orange-500">FORGE</span>{" "}
-            <span className="text-white">FITNESS</span>
+            <span className="text-orange-500">GYMTALITY</span>
           </h1>
-          <p className="text-zinc-400 text-sm mt-1">Forged Daily. 24/7.</p>
+          <p className="text-zinc-400 text-sm mt-1">Your Fitness Mentality. 24/7.</p>
         </div>
         {children}
       </div>

@@ -43,11 +43,11 @@ async function main() {
   // ── TENANT ──────────────────────────────────
   console.log("  Creating tenant...");
   const tenant = await prisma.tenant.upsert({
-    where: { slug: "forge-fitness" },
+    where: { slug: "gymtality" },
     update: {},
     create: {
-      slug: "forge-fitness",
-      name: "Forge Fitness",
+      slug: "gymtality",
+      name: "Gymtality",
       primaryColor: "#FF6B00",
       accentColor: "#1A1A2E",
       plan: "ENTERPRISE",
@@ -83,13 +83,13 @@ async function main() {
   // ── ADMIN USER ──────────────────────────────
   console.log("  Creating admin...");
   const admin = await prisma.user.upsert({
-    where: { tenantId_email: { tenantId: T, email: "admin@forgefitness.com" } },
+    where: { tenantId_email: { tenantId: T, email: "admin@gymtality.fit" } },
     update: {},
     create: {
       tenantId: T,
-      fullName: "Forge Admin",
-      username: "forge_admin",
-      email: "admin@forgefitness.com",
+      fullName: "Gymtality Admin",
+      username: "gymtality_admin",
+      email: "admin@gymtality.fit",
       passwordHash: adminPass,
       role: "ADMIN",
       emailVerified: true,
@@ -108,7 +108,7 @@ async function main() {
     {
       fullName: "Marcus Thompson",
       username: "coach_marcus",
-      email: "marcus@forgefitness.com",
+      email: "marcus@gymtality.fit",
       category: "WORKOUT_TRAINER" as const,
       bio: "NASM Certified Personal Trainer with 8 years of experience. Specializing in strength training and body transformation.",
       certifications: ["NASM-CPT", "CrossFit Level 2", "First Aid/CPR"],
@@ -116,7 +116,7 @@ async function main() {
     {
       fullName: "Priya Sharma",
       username: "coach_priya",
-      email: "priya@forgefitness.com",
+      email: "priya@gymtality.fit",
       category: "YOGA" as const,
       bio: "RYT-500 Yoga Instructor. Blending traditional Ashtanga with modern flow for all levels.",
       certifications: ["RYT-500", "Prenatal Yoga Cert", "Meditation Teacher Training"],
@@ -124,7 +124,7 @@ async function main() {
     {
       fullName: "Jamal Robinson",
       username: "coach_jamal",
-      email: "jamal@forgefitness.com",
+      email: "jamal@gymtality.fit",
       category: "WORKOUT_TRAINER" as const,
       bio: "Former D1 athlete turned coach. HIIT, functional fitness, and athletic performance specialist.",
       certifications: ["ACE-CPT", "CSCS", "TRX Certified"],
@@ -132,7 +132,7 @@ async function main() {
     {
       fullName: "Elena Vasquez",
       username: "coach_elena",
-      email: "elena@forgefitness.com",
+      email: "elena@gymtality.fit",
       category: "MEDITATION" as const,
       bio: "Mindfulness coach and certified meditation teacher. Helping you find calm in the chaos.",
       certifications: ["CMT", "MBSR Teacher", "Breathwork Facilitator"],
@@ -140,7 +140,7 @@ async function main() {
     {
       fullName: "Derek Kim",
       username: "coach_derek",
-      email: "derek@forgefitness.com",
+      email: "derek@gymtality.fit",
       category: "HEALTHY_FOODS" as const,
       bio: "Certified Nutritionist and meal-prep expert. Fueling your gains the right way.",
       certifications: ["CNS", "Sports Nutrition Diploma", "ServSafe"],
@@ -189,7 +189,7 @@ async function main() {
   const memberData = [
     {
       fullName: "Alex Rivera",
-      username: "alex_forge",
+      username: "alex_gym",
       email: "alex@example.com",
       bio: "Fitness beginner on a transformation journey. 30 lbs down, 20 to go!",
       age: 28,
@@ -683,7 +683,7 @@ async function main() {
       startTime: daysFromNow(3),
       endTime: new Date(daysFromNow(3).getTime() + 2 * 60 * 60 * 1000),
       capacity: 20,
-      location: "Forge Fitness Main Floor",
+      location: "Gymtality Main Floor",
       price: 25,
     },
     {
@@ -738,7 +738,7 @@ async function main() {
       startTime: daysFromNow(12),
       endTime: new Date(daysFromNow(12).getTime() + 3 * 60 * 60 * 1000),
       capacity: 40,
-      location: "Forge Fitness Arena",
+      location: "Gymtality Arena",
       price: 20,
     },
     {
@@ -803,18 +803,18 @@ async function main() {
   console.log("  Creating music albums & songs...");
   const albumData = [
     {
-      name: "Forge Beats Vol. 1",
-      title: "Forge Beats Vol. 1",
+      name: "Gymtality Beats Vol. 1",
+      title: "Gymtality Beats Vol. 1",
       subTitle: "High Energy Workout Mix",
       description: "The ultimate workout soundtrack. Heavy bass, fast BPM, pure motivation.",
       category: "Workout",
       songs: [
-        { name: "Iron Will", artist: "Forge Audio", genre: "Electronic", duration: 224 },
-        { name: "No Limits", artist: "Forge Audio", genre: "Electronic", duration: 198 },
-        { name: "Beast Mode", artist: "Forge Audio", genre: "Hip-Hop", duration: 210 },
-        { name: "Rise Up", artist: "Forge Audio", genre: "Electronic", duration: 245 },
-        { name: "Unbreakable", artist: "Forge Audio", genre: "Rock", duration: 232 },
-        { name: "Final Rep", artist: "Forge Audio", genre: "Electronic", duration: 189 },
+        { name: "Iron Will", artist: "Gymtality Audio", genre: "Electronic", duration: 224 },
+        { name: "No Limits", artist: "Gymtality Audio", genre: "Electronic", duration: 198 },
+        { name: "Beast Mode", artist: "Gymtality Audio", genre: "Hip-Hop", duration: 210 },
+        { name: "Rise Up", artist: "Gymtality Audio", genre: "Electronic", duration: 245 },
+        { name: "Unbreakable", artist: "Gymtality Audio", genre: "Rock", duration: 232 },
+        { name: "Final Rep", artist: "Gymtality Audio", genre: "Electronic", duration: 189 },
       ],
     },
     {
@@ -896,7 +896,7 @@ async function main() {
   // ── BOOKS ───────────────────────────────────
   console.log("  Creating books...");
   const bookData = [
-    { title: "The Forge Method", author: "Marcus Thompson", language: "English", category: "Strength Training", about: "A comprehensive guide to progressive overload and periodization for natural lifters." },
+    { title: "The Gymtality Method", author: "Marcus Thompson", language: "English", category: "Strength Training", about: "A comprehensive guide to progressive overload and periodization for natural lifters." },
     { title: "Mindful Movement", author: "Priya Sharma", language: "English", category: "Yoga", about: "Connecting breath to movement — a modern approach to traditional yoga practices." },
     { title: "HIIT Science", author: "Jamal Robinson", language: "English", category: "HIIT", about: "The research behind high-intensity interval training and how to program it effectively." },
     { title: "Calm in Chaos", author: "Elena Vasquez", language: "English", category: "Meditation", about: "Practical meditation techniques for busy professionals. 10 minutes a day can change your life." },
@@ -913,14 +913,14 @@ async function main() {
   // ── PRODUCTS (SHOP) ─────────────────────────
   console.log("  Creating products...");
   const productData = [
-    { name: "Forge Fitness T-Shirt", description: "Premium cotton blend tee with the Forge Fitness logo. Available in Black, White, and Orange.", price: 29.99, category: "Apparel", stock: 150 },
-    { name: "Forge Performance Hoodie", description: "Heavyweight fleece hoodie. Perfect for warming up or cool-down walks. Embroidered logo.", price: 59.99, category: "Apparel", stock: 80 },
-    { name: "Forge Shaker Bottle", description: "28oz BPA-free shaker with mixing ball. Leak-proof lid. Forge orange accent.", price: 14.99, category: "Accessories", stock: 200 },
+    { name: "Gymtality T-Shirt", description: "Premium cotton blend tee with the Gymtality logo. Available in Black, White, and Orange.", price: 29.99, category: "Apparel", stock: 150 },
+    { name: "Gymtality Performance Hoodie", description: "Heavyweight fleece hoodie. Perfect for warming up or cool-down walks. Embroidered logo.", price: 59.99, category: "Apparel", stock: 80 },
+    { name: "Gymtality Shaker Bottle", description: "28oz BPA-free shaker with mixing ball. Leak-proof lid. Gymtality orange accent.", price: 14.99, category: "Accessories", stock: 200 },
     { name: "Resistance Band Set (5-Pack)", description: "Light to heavy resistance bands with door anchor. Carry bag included.", price: 24.99, category: "Equipment", stock: 120 },
-    { name: "Forge Lifting Straps", description: "Heavy-duty cotton lifting straps with neoprene padding. One size fits all.", price: 16.99, category: "Equipment", stock: 100 },
-    { name: "Forge Pre-Workout (30 servings)", description: "Clean energy formula. 200mg caffeine, beta-alanine, citrulline. Tropical Punch flavor.", price: 39.99, category: "Supplements", stock: 75 },
+    { name: "Gymtality Lifting Straps", description: "Heavy-duty cotton lifting straps with neoprene padding. One size fits all.", price: 16.99, category: "Equipment", stock: 100 },
+    { name: "Gymtality Pre-Workout (30 servings)", description: "Clean energy formula. 200mg caffeine, beta-alanine, citrulline. Tropical Punch flavor.", price: 39.99, category: "Supplements", stock: 75 },
     { name: "Whey Protein (2 lbs)", description: "100% whey protein isolate. 25g protein per scoop. Chocolate and Vanilla flavors.", price: 44.99, category: "Supplements", stock: 90 },
-    { name: "Forge Gym Bag", description: "Durable nylon duffle with shoe compartment, water bottle pocket, and ventilated section.", price: 49.99, category: "Accessories", stock: 60 },
+    { name: "Gymtality Gym Bag", description: "Durable nylon duffle with shoe compartment, water bottle pocket, and ventilated section.", price: 49.99, category: "Accessories", stock: 60 },
     { name: "Yoga Mat (6mm)", description: "Non-slip, eco-friendly TPE yoga mat. 72 x 24 inches. Includes carry strap.", price: 34.99, category: "Equipment", stock: 85 },
     { name: "Wrist Wraps (Pair)", description: "12-inch wrist wraps for bench press and overhead movements. Thumb loop, velcro closure.", price: 12.99, category: "Equipment", stock: 130 },
   ];
@@ -1125,9 +1125,9 @@ async function main() {
   const cmsData = [
     {
       key: "about",
-      title: "About Forge Fitness",
-      content: `<h2>About Forge Fitness</h2>
-<p>Forge Fitness is more than a gym — it's a community-driven platform built for people who are serious about transforming their lives through fitness.</p>
+      title: "About Gymtality",
+      content: `<h2>About Gymtality</h2>
+<p>Gymtality is more than a gym — it's a community-driven platform built for people who are serious about transforming their lives through fitness.</p>
 <p>Founded in 2026, our mission is to make world-class coaching, programming, and community accessible to everyone — whether you train at home, in a gym, or on the go.</p>
 <h3>What Makes Us Different</h3>
 <ul>
@@ -1142,7 +1142,7 @@ async function main() {
       title: "Privacy Policy",
       content: `<h2>Privacy Policy</h2>
 <p>Last updated: March 2026</p>
-<p>Forge Fitness ("we", "our", "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share your personal information when you use our platform.</p>
+<p>Gymtality ("we", "our", "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share your personal information when you use our platform.</p>
 <h3>Information We Collect</h3>
 <p>We collect information you provide directly to us, such as when you create an account, complete your fitness questionnaire, make a purchase, or contact us for support.</p>
 <h3>How We Use Your Information</h3>
@@ -1155,20 +1155,20 @@ async function main() {
       title: "Terms & Conditions",
       content: `<h2>Terms & Conditions</h2>
 <p>Last updated: March 2026</p>
-<p>By accessing or using Forge Fitness, you agree to be bound by these Terms & Conditions.</p>
+<p>By accessing or using Gymtality, you agree to be bound by these Terms & Conditions.</p>
 <h3>Account Registration</h3>
 <p>You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials.</p>
 <h3>Subscriptions & Payments</h3>
 <p>Subscription fees are billed in advance on a monthly or annual basis. You may cancel your subscription at any time through your account settings.</p>
 <h3>Code of Conduct</h3>
-<p>You agree to use Forge Fitness respectfully. Harassment, spam, or abusive behavior will result in account suspension or termination.</p>`,
+<p>You agree to use Gymtality respectfully. Harassment, spam, or abusive behavior will result in account suspension or termination.</p>`,
     },
     {
       key: "terms-professional",
       title: "Professional Terms & Conditions",
       content: `<h2>Professional Terms & Conditions</h2>
 <p>Last updated: March 2026</p>
-<p>These terms apply to coaches and professionals using the Forge Fitness platform to offer their services.</p>
+<p>These terms apply to coaches and professionals using the Gymtality platform to offer their services.</p>
 <h3>Coach Requirements</h3>
 <p>All coaches must hold valid certifications in their area of expertise. Certifications must be uploaded and verified during the approval process.</p>
 <h3>Commission & Payouts</h3>
@@ -1187,7 +1187,7 @@ async function main() {
   // ── NOTIFICATIONS ───────────────────────────
   console.log("  Creating notifications...");
   const notifData = [
-    { userIdx: 0, type: "WORKOUT_COMPLETED" as const, title: "Workout Complete!", message: "Great job finishing Beginner Full Body Blast! You earned 85 Forge points." },
+    { userIdx: 0, type: "WORKOUT_COMPLETED" as const, title: "Workout Complete!", message: "Great job finishing Beginner Full Body Blast! You earned 85 Gymtality points." },
     { userIdx: 0, type: "LIKE" as const, title: "New Like", message: "Sarah Chen liked your post 'First month complete!'" },
     { userIdx: 1, type: "COMMENT" as const, title: "New Comment", message: "Tyler Brooks commented on your post: 'Race day ready'" },
     { userIdx: 2, type: "EVENT_REMINDER" as const, title: "Event Tomorrow", message: "HIIT Boot Camp starts tomorrow at the Outdoor Training Area. Don't forget your water!" },
@@ -1214,7 +1214,7 @@ async function main() {
     await prisma.affiliateLink.create({
       data: {
         userId: members[i].id,
-        code: `FORGE${members[i].username.toUpperCase()}`,
+        code: `GYMTALITY${members[i].username.toUpperCase()}`,
         campaignName: "Member Referral",
         clicks: Math.floor(Math.random() * 50) + 5,
         conversions: Math.floor(Math.random() * 5),
@@ -1262,7 +1262,7 @@ async function main() {
   console.log("\n✅ Seed complete!\n");
   console.log("  📊 Summary:");
   console.log("  ─────────────────────────────────");
-  console.log("  1  Tenant (Forge Fitness)");
+  console.log("  1  Tenant (Gymtality)");
   console.log("  1  Admin user");
   console.log("  5  Coaches (all approved)");
   console.log("  10 Members (with profiles + subscriptions)");
@@ -1291,8 +1291,8 @@ async function main() {
   console.log("  1  Moderation report");
   console.log("  ─────────────────────────────────\n");
   console.log("  🔑 Login credentials:");
-  console.log("  Admin:   admin@forgefitness.com  / Admin123!");
-  console.log("  Coach:   marcus@forgefitness.com / Coach123!");
+  console.log("  Admin:   admin@gymtality.fit     / Admin123!");
+  console.log("  Coach:   marcus@gymtality.fit    / Coach123!");
   console.log("  Member:  alex@example.com        / Member123!\n");
 }
 

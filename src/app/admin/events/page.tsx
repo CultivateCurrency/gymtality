@@ -379,7 +379,7 @@ export default function AdminEventsPage() {
               <div className="space-y-1.5">
                 <label className="text-sm text-zinc-300">Event Title</label>
                 <Input
-                  placeholder="e.g., Forge Fitness 5K"
+                  placeholder="e.g., Gymtality 5K"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   className="bg-zinc-800 border-zinc-700 text-white"

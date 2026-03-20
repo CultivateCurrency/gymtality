@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const validated = signUpSchema.parse(body);
 
     // For MVP, use default tenant. In production, resolve from subdomain
-    const tenantSlug = body.tenantSlug || "forge-fitness";
+    const tenantSlug = body.tenantSlug || "gymtality";
     let tenant = await prisma.tenant.findUnique({
       where: { slug: tenantSlug },
     });
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       tenant = await prisma.tenant.create({
         data: {
           slug: tenantSlug,
-          name: "Forge Fitness",
+          name: "Gymtality",
           status: "ACTIVE",
           plan: "ENTERPRISE",
           features: [

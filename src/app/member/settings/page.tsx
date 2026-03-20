@@ -105,7 +105,7 @@ export default function SettingsPage() {
 function SettingsContent() {
   const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("Jordan Hayes");
-  const [username, setUsername] = useState("forge_jordan");
+  const [username, setUsername] = useState("gymtality_jordan");
   const [email, setEmail] = useState("jordan@example.com");
   const [billingInterval, setBillingInterval] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
   const [subscribing, setSubscribing] = useState<string | null>(null);
@@ -174,7 +174,7 @@ function SettingsContent() {
           <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
           <div className="flex-1">
             <p className="text-green-400 font-medium">Subscription activated!</p>
-            <p className="text-green-400/70 text-sm">Welcome to Forge Fitness Premium.</p>
+            <p className="text-green-400/70 text-sm">Welcome to Gymtality Premium.</p>
           </div>
           <button onClick={() => setSubSuccess(false)} className="text-green-400/50 hover:text-green-400">
             <X className="h-4 w-4" />

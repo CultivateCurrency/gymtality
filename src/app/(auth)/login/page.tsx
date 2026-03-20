@@ -75,7 +75,7 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle className="text-white text-2xl">Welcome Back</CardTitle>
         <CardDescription className="text-zinc-400">
-          Sign in to your Forge Fitness account
+          Sign in to your Gymtality account
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

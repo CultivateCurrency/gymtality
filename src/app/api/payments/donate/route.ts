@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     // If donating to a coach, get coach name for description
-    let coachName = "Forge Fitness";
+    let coachName = "Gymtality";
     if (coachId) {
       const coach = await prisma.user.findUnique({ where: { id: coachId } });
       if (coach) coachName = coach.fullName;
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             product_data: {
               name: `Donation to ${coachName}`,
-              description: message || `Supporting ${coachName} on Forge Fitness`,
+              description: message || `Supporting ${coachName} on Gymtality`,
             },
             unit_amount: Math.round(amount * 100),
           },

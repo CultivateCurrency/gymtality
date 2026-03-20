@@ -101,8 +101,7 @@ export function Sidebar({ variant }: SidebarProps) {
       <div className="p-6 border-b border-zinc-800">
         <Link href="/" className="flex items-center gap-2">
           <h1 className="text-xl font-black tracking-tight">
-            <span className="text-orange-500">FORGE</span>{" "}
-            <span className="text-white">FITNESS</span>
+            <span className="text-orange-500">GYMTALITY</span>
           </h1>
         </Link>
         <span className="text-xs text-zinc-500 capitalize mt-1 block">

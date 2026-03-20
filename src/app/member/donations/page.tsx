@@ -96,7 +96,7 @@ function DonationsContent() {
           Donations
         </h1>
         <p className="text-zinc-400 mt-1">
-          Support the Forge Fitness mission and help us build a physical gym
+          Support the Gymtality mission and help us build a physical gym
         </p>
       </div>
 
@@ -185,7 +185,7 @@ function DonationsContent() {
               <div>
                 <p className="text-sm text-zinc-400 mb-2">Leave a message (optional)</p>
                 <Textarea
-                  placeholder="Thank you for building Forge Fitness..."
+                  placeholder="Thank you for building Gymtality..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}

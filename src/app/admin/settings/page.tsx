@@ -44,7 +44,7 @@ const announcements = [
 ];
 
 export default function AdminSettingsPage() {
-  const [gymName, setGymName] = useState("Forge Fitness");
+  const [gymName, setGymName] = useState("Gymtality");
   const [primaryColor, setPrimaryColor] = useState("#f97316");
   const [showAnnouncement, setShowAnnouncement] = useState(false);
 
@@ -72,7 +72,7 @@ export default function AdminSettingsPage() {
           {/* Logo */}
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-              <span className="text-2xl font-bold text-orange-500">FF</span>
+              <span className="text-2xl font-bold text-orange-500">G</span>
             </div>
             <div>
               <p className="text-sm text-zinc-300">Platform Logo</p>

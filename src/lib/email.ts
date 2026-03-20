@@ -8,8 +8,8 @@ function getResend(): Resend | null {
 }
 
 const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "Forge Fitness <onboarding@resend.dev>";
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Forge Fitness";
+  process.env.RESEND_FROM_EMAIL || "Gymtality <onboarding@resend.dev>";
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Gymtality";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // ─── Shared email layout ───────────────────────────────────────────────────
@@ -24,8 +24,7 @@ function emailLayout(content: string): string {
         <!-- Logo -->
         <div style="text-align:center;margin-bottom:32px;">
           <h1 style="margin:0;font-size:28px;font-weight:900;letter-spacing:1px;">
-            <span style="color:#FF6B00;">FORGE</span>
-            <span style="color:#ffffff;"> FITNESS</span>
+            <span style="color:#FF6B00;">GYMTALITY</span>
           </h1>
         </div>
         <!-- Card -->
@@ -113,7 +112,7 @@ export async function sendOTPEmail(
     ? `${otp} — Verify your ${APP_NAME} account`
     : `${otp} — Reset your ${APP_NAME} password`;
 
-  const heading = isVerify ? "Welcome to Forge Fitness!" : "Password Reset Request";
+  const heading = isVerify ? "Welcome to Gymtality!" : "Password Reset Request";
 
   const message = isVerify
     ? "Use the code below to verify your email address and activate your account."

@@ -119,7 +119,7 @@ const PLAN_TIER_CONFIG = [
 
 // Sample coupon data (no coupons API exists yet)
 const coupons = [
-  { id: 1, code: "FORGE25", discount: "25% off", type: "Percentage", uses: 142, maxUses: 500, expiresAt: "2026-04-30", status: "Active" },
+  { id: 1, code: "GYMTALITY25", discount: "25% off", type: "Percentage", uses: 142, maxUses: 500, expiresAt: "2026-04-30", status: "Active" },
   { id: 2, code: "NEWYEAR50", discount: "50% off first month", type: "Percentage", uses: 89, maxUses: 100, expiresAt: "2026-01-31", status: "Expired" },
   { id: 3, code: "ELITE10", discount: "$10 off", type: "Fixed", uses: 23, maxUses: 200, expiresAt: "2026-06-30", status: "Active" },
   { id: 4, code: "REFERRAL15", discount: "15% off", type: "Percentage", uses: 67, maxUses: null, expiresAt: null, status: "Active" },

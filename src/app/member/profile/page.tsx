@@ -22,8 +22,8 @@ import {
 
 const PROFILE = {
   fullName: "Jordan Hayes",
-  username: "forge_jordan",
-  bio: "Fitness enthusiast | Powerlifting | Trying to be 1% better every day. Forge member since 2025.",
+  username: "gymtality_jordan",
+  bio: "Fitness enthusiast | Powerlifting | Trying to be 1% better every day. Gymtality member since 2025.",
   stats: {
     posts: 24,
     followers: 312,

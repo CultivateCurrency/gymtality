@@ -36,7 +36,7 @@ const FAQ_ITEMS = [
   {
     question: "Can I sync my wearable device?",
     answer:
-      "Yes! Go to Settings > Connected Devices to link Apple Health or Google Fit. Your activity data will automatically sync with your Forge Fitness dashboard.",
+      "Yes! Go to Settings > Connected Devices to link Apple Health or Google Fit. Your activity data will automatically sync with your Gymtality dashboard.",
   },
   {
     question: "How does the referral program work?",
@@ -54,9 +54,9 @@ const FAQ_ITEMS = [
       "Use the Messages section to send a direct message to your coach. You can also initiate audio or video calls from the chat screen.",
   },
   {
-    question: "What is the Forge Score?",
+    question: "What is the Gymtality Score?",
     answer:
-      "The Forge Score is a performance metric calculated based on your workout completion, consistency, and intensity. It helps you track your overall fitness progress over time.",
+      "The Gymtality Score is a performance metric calculated based on your workout completion, consistency, and intensity. It helps you track your overall fitness progress over time.",
   },
 ];
 
@@ -111,7 +111,7 @@ export default function HelpPage() {
             </div>
             <div>
               <p className="font-medium text-white">Email Support</p>
-              <p className="text-sm text-zinc-400">support@forgefitness.com</p>
+              <p className="text-sm text-zinc-400">support@gymtality.fit</p>
             </div>
           </CardContent>
         </Card>
@@ -123,7 +123,7 @@ export default function HelpPage() {
             </div>
             <div>
               <p className="font-medium text-white">Phone Support</p>
-              <p className="text-sm text-zinc-400">1-800-FORGE-FIT (Mon-Fri 9am-6pm)</p>
+              <p className="text-sm text-zinc-400">1-800-GYMTALITY (Mon-Fri 9am-6pm)</p>
             </div>
           </CardContent>
         </Card>

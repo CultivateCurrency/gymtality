@@ -89,7 +89,7 @@ export default function ReferralsPage() {
             <Gift className="h-8 w-8 text-orange-500" />
             Invite & Referrals
           </h1>
-          <p className="text-zinc-400 mt-1">Share Forge Fitness and earn rewards</p>
+          <p className="text-zinc-400 mt-1">Share Gymtality and earn rewards</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger>

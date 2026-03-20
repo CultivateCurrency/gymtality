@@ -35,7 +35,7 @@ export default function PrivacyPage() {
             <li>Send you technical notices, updates, and support messages</li>
             <li>
               Communicate with you about products, services, and events offered
-              by Forge Fitness
+              by Gymtality
             </li>
             <li>Monitor and analyze usage trends to improve user experience</li>
             <li>Detect, investigate, and prevent fraudulent or unauthorized activity</li>
@@ -147,8 +147,8 @@ export default function PrivacyPage() {
             us at:
           </p>
           <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300">
-            <p>Email: privacy@forgefitness.com</p>
-            <p>Phone: 1-800-FORGE-FIT</p>
+            <p>Email: privacy@gymtality.fit</p>
+            <p>Phone: 1-800-GYMTALITY</p>
           </div>
         </section>
       </div>

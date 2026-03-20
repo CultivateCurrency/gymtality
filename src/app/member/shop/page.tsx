@@ -159,7 +159,7 @@ function ShopContent() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Merch Store</h1>
-          <p className="text-zinc-400 mt-1">Gear up with official Forge Fitness merchandise.</p>
+          <p className="text-zinc-400 mt-1">Gear up with official Gymtality merchandise.</p>
         </div>
         <Button
           variant="outline"
