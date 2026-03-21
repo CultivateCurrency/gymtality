@@ -13,46 +13,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         tenantId: { label: "Tenant ID", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          const email = (credentials.email as string).trim().toLowerCase();
+          const password = credentials.password as string;
+          const tenantId = credentials.tenantId as string;
+
+          // Find user by email — if tenantId is "default", skip tenant filter
+          const user = await prisma.user.findFirst({
+            where: {
+              email,
+              ...(tenantId && tenantId !== "default" ? { tenantId } : {}),
+            },
+          });
+
+          if (!user) {
+            return null;
+          }
+
+          if (!user.emailVerified) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.fullName,
+            image: user.profilePhoto,
+            role: user.role,
+            tenantId: user.tenantId,
+            username: user.username,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
         }
-
-        const email = (credentials.email as string).trim().toLowerCase();
-        const password = credentials.password as string;
-        const tenantId = credentials.tenantId as string;
-
-        // Find user by email — if tenantId is "default", skip tenant filter
-        // (single-tenant mode or tenant resolved later by middleware)
-        const user = await prisma.user.findFirst({
-          where: {
-            email,
-            ...(tenantId && tenantId !== "default" ? { tenantId } : {}),
-          },
-        });
-
-        if (!user) {
-          throw new Error("Invalid email or password");
-        }
-
-        if (!user.emailVerified) {
-          throw new Error("Please verify your email before logging in");
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-        if (!isPasswordValid) {
-          throw new Error("Invalid email or password");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.fullName,
-          image: user.profilePhoto,
-          role: user.role,
-          tenantId: user.tenantId,
-          username: user.username,
-        };
       },
     }),
   ],

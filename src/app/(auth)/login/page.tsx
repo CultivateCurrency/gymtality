@@ -43,13 +43,21 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // NextAuth v5 returns "CredentialsSignin" as generic error
-        // Map to user-friendly message
-        if (result.error === "CredentialsSignin") {
-          setError("Invalid email or password. Please check your credentials and try again.");
-        } else {
-          setError(result.error);
-        }
+        // Check if the user exists but email is unverified
+        try {
+          const checkRes = await fetch("/api/auth/check-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: form.email.trim().toLowerCase() }),
+          });
+          const checkData = await checkRes.json();
+          if (checkData.success && checkData.data?.needsVerification) {
+            setError("Please verify your email before logging in. Check your inbox for the OTP code.");
+            return;
+          }
+        } catch { /* fall through to generic error */ }
+
+        setError("Invalid email or password. Please check your credentials and try again.");
         return;
       }
 
