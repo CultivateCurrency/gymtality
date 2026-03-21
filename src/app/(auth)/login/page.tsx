@@ -36,14 +36,20 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
-        email: form.email,
+        email: form.email.trim().toLowerCase(),
         password: form.password,
-        tenantId: "default", // resolved by middleware in production
+        tenantId: "default",
         redirect: false,
       });
 
       if (result?.error) {
-        setError(result.error);
+        // NextAuth v5 returns "CredentialsSignin" as generic error
+        // Map to user-friendly message
+        if (result.error === "CredentialsSignin") {
+          setError("Invalid email or password. Please check your credentials and try again.");
+        } else {
+          setError(result.error);
+        }
         return;
       }
 

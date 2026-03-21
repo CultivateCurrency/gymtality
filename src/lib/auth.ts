@@ -17,14 +17,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Email and password are required");
         }
 
-        const email = credentials.email as string;
+        const email = (credentials.email as string).trim().toLowerCase();
         const password = credentials.password as string;
         const tenantId = credentials.tenantId as string;
 
+        // Find user by email — if tenantId is "default", skip tenant filter
+        // (single-tenant mode or tenant resolved later by middleware)
         const user = await prisma.user.findFirst({
           where: {
             email,
-            tenantId,
+            ...(tenantId && tenantId !== "default" ? { tenantId } : {}),
           },
         });
 

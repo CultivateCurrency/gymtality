@@ -47,7 +47,7 @@ function formatMessageTime(epochSeconds: number): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function MessagesPage() {
+export default function CoachMessagesPage() {
   const {
     session,
     dialogs,
@@ -106,7 +106,6 @@ export default function MessagesPage() {
     if (!messageText.trim() || !activeDialogId || !activeDialog || !session) return;
 
     setSending(true);
-    // Find the other occupant in the dialog
     const recipientQbId = activeDialog.occupants_ids.find((id) => id !== session.qbUserId);
     if (recipientQbId) {
       await sendMessage(activeDialogId, messageText.trim(), recipientQbId);
@@ -118,7 +117,6 @@ export default function MessagesPage() {
   async function handleStartChat(user: { id: string; fullName: string; qbUserId: number | null }) {
     if (!user.qbUserId) return;
 
-    // Check if dialog already exists with this user
     const existing = dialogs.find(
       (d) => d.type === 3 && d.occupants_ids.includes(user.qbUserId!)
     );
@@ -134,7 +132,6 @@ export default function MessagesPage() {
     setNewChatSearch("");
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto flex items-center justify-center h-[calc(100vh-7rem)]">
@@ -146,7 +143,6 @@ export default function MessagesPage() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="max-w-7xl mx-auto flex items-center justify-center h-[calc(100vh-7rem)]">
@@ -185,10 +181,9 @@ export default function MessagesPage() {
       <div className="flex h-[calc(100vh-7rem)] gap-0 rounded-xl overflow-hidden border border-zinc-800">
         {/* Conversation List */}
         <div className="w-80 shrink-0 bg-zinc-900 border-r border-zinc-800 flex flex-col">
-          {/* List Header */}
           <div className="p-4 border-b border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Messages</h2>
+              <h2 className="text-lg font-bold text-white">Client Messages</h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -206,7 +201,7 @@ export default function MessagesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <Input
-                  placeholder="Search users..."
+                  placeholder="Search members..."
                   value={newChatSearch}
                   onChange={(e) => setNewChatSearch(e.target.value)}
                   className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
@@ -233,7 +228,7 @@ export default function MessagesPage() {
                 <div className="p-4 text-center text-zinc-500 text-sm">No users found</div>
               )}
               {newChatSearch.length < 1 && (
-                <div className="p-4 text-center text-zinc-500 text-sm">Type to search users</div>
+                <div className="p-4 text-center text-zinc-500 text-sm">Type to search members</div>
               )}
               {users.map((user) => (
                 <button
@@ -265,7 +260,7 @@ export default function MessagesPage() {
                   <MessageSquare className="h-8 w-8 text-zinc-600 mx-auto" />
                   <p className="text-sm text-zinc-500">No conversations yet</p>
                   <p className="text-xs text-zinc-600">
-                    Tap + to start a new chat
+                    Tap + to message a client
                   </p>
                 </div>
               )}
@@ -434,7 +429,7 @@ export default function MessagesPage() {
                 <MessageSquare className="h-12 w-12 text-zinc-700 mx-auto" />
                 <p className="text-zinc-500">Select a conversation to start chatting</p>
                 <p className="text-xs text-zinc-600">
-                  Or tap + to start a new conversation
+                  Or tap + to message a client
                 </p>
               </div>
             </div>

@@ -60,6 +60,7 @@ const coachNav: NavItem[] = [
   { label: "Schedule", href: "/coach/schedule", icon: Calendar },
   { label: "Streaming", href: "/coach/streaming", icon: Radio },
   { label: "Earnings", href: "/coach/earnings", icon: Trophy },
+  { label: "Messages", href: "/coach/messages", icon: MessageCircle },
   { label: "Donations", href: "/coach/donations", icon: Heart },
   { label: "Notifications", href: "/coach/notifications", icon: Bell },
   { label: "Help & Support", href: "/coach/help", icon: HelpCircle },
