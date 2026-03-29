@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import {
   Card,
@@ -71,10 +71,10 @@ function getNotificationIcon(type: string) {
 }
 
 export default function CoachNotificationsPage() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const { data: notifications, loading, error, refetch } =
     useApi<NotificationItem[]>(
-      session?.user ? "/api/coach/notifications" : null
+      user ? "/api/coach/notifications" : null
     );
   const [filter, setFilter] = useState<string>("ALL");
   const [togglingId, setTogglingId] = useState<string | null>(null);

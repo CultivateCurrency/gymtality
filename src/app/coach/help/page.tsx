@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { apiFetch } from "@/hooks/use-api";
 import {
   Card,
@@ -64,7 +64,7 @@ const faqs = [
 ];
 
 export default function CoachHelpPage() {
-  const { data: session, status } = useSession();
+  const { user } = useAuthStore();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -74,11 +74,11 @@ export default function CoachHelpPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
-    if (session?.user) {
-      setName(session.user.name || "");
-      setEmail(session.user.email || "");
+    if (user) {
+      setName(user.fullName || "");
+      setEmail(user.email || "");
     }
-  }, [session]);
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!subject.trim() || !message.trim()) return;
@@ -99,13 +99,6 @@ export default function CoachHelpPage() {
     }
   };
 
-  if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

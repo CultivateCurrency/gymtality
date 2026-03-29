@@ -22,6 +22,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 type ProductCategory = "All" | "Apparel" | "Supplements" | "Accessories" | "Equipment" | "Digital";
 
@@ -133,7 +134,7 @@ function ShopContent() {
         window.location.href = res.url;
       }
     } catch (err: any) {
-      alert(err.message || "Checkout failed. Please try again.");
+      toast.error(err.message || "Checkout failed. Please try again.");
     } finally {
       setCheckingOut(false);
     }

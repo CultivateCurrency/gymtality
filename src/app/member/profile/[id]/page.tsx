@@ -29,7 +29,7 @@ import {
   TreePine,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 
 interface UserProfile {
   id: string;
@@ -62,8 +62,8 @@ export default function ViewProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { data: session } = useSession();
-  const currentUserId = (session?.user as any)?.id;
+  const { user } = useAuthStore();
+  const currentUserId = user?.id;
 
   const { data, loading, refetch } = useApi<ProfileResponse>(
     `/api/users/${id}/profile`

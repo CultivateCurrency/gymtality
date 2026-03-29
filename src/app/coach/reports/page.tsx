@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation } from "@/hooks/use-api";
 import {
   Card,
@@ -49,14 +49,14 @@ interface ReportsData {
 }
 
 export default function CoachReportsPage() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const {
     data: reportsData,
     loading,
     error,
     refetch,
   } = useApi<ReportsData>(
-    session?.user ? "/api/coach/reports" : null
+    user ? "/api/coach/reports" : null
   );
   const { mutate: submitReport, loading: submitting, error: submitError } =
     useMutation<ReportItem>("/api/coach/reports", "POST");

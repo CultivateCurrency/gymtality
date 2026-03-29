@@ -123,6 +123,12 @@ model User {
   challengeParticipations ChallengeParticipant[]
   points                  Int @default(0)
 
+  wearableConnections WearableConnection[]
+  wearableData        WearableData[]
+  reviews             Review[]
+  mealPlans           MealPlan[]
+  notificationPrefs   NotificationPreference?
+
   @@unique([tenantId, email])
   @@unique([tenantId, username])
   @@index([tenantId])
@@ -938,6 +944,135 @@ model Questionnaire {
   updatedAt DateTime         @updatedAt
 
   @@index([tenantId])
+}
+
+// ============================================
+// REVIEWS & RATINGS
+// ============================================
+
+model Review {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String
+  targetType String   // "COACH" or "WORKOUT"
+  targetId   String
+  rating     Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([userId])
+}
+
+// ============================================
+// MEAL PLANNING
+// ============================================
+
+model MealPlan {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meals Meal[]
+
+  @@index([userId])
+}
+
+model Meal {
+  id         String @id @default(cuid())
+  planId     String
+  name       String
+  mealType   String // BREAKFAST, LUNCH, DINNER, SNACK
+  calories   Int?
+  protein    Float?
+  carbs      Float?
+  fat        Float?
+  notes      String?
+  dayOfWeek  String? // MON, TUE, etc.
+
+  plan MealPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// NOTIFICATION PREFERENCES
+// ============================================
+
+model NotificationPreference {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  likes    Boolean @default(true)
+  comments Boolean @default(true)
+  follows  Boolean @default(true)
+  events   Boolean @default(true)
+  workouts Boolean @default(true)
+  payments Boolean @default(true)
+  streams  Boolean @default(true)
+  system   Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// WEARABLES
+// ============================================
+
+enum WearableProvider {
+  GOOGLE_FIT
+  APPLE_HEALTH
+}
+
+model WearableConnection {
+  id            String           @id @default(cuid())
+  userId        String
+  tenantId      String
+  provider      WearableProvider
+  accessToken   String?
+  refreshToken  String?
+  tokenExpiry   DateTime?
+  lastSyncedAt  DateTime?
+  connected     Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+enum WearableMetricType {
+  STEPS
+  HEART_RATE
+  CALORIES_BURNED
+  SLEEP_MINUTES
+  DISTANCE_METERS
+  ACTIVE_MINUTES
+}
+
+model WearableData {
+  id         String             @id @default(cuid())
+  userId     String
+  tenantId   String
+  provider   WearableProvider
+  metricType WearableMetricType
+  value      Float
+  unit       String
+  date       DateTime
+  createdAt  DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, metricType, date])
 }
 
 // ============================================

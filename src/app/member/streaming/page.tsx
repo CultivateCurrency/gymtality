@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
 import { useApi } from "@/hooks/use-api";
 import {
   Card,
@@ -268,7 +267,6 @@ function StreamCard({
 }
 
 export default function StreamingPage() {
-  const { data: session } = useSession();
   const [watchingStream, setWatchingStream] = useState<Stream | null>(null);
 
   // Fetch all streams by status

@@ -31,7 +31,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -87,8 +87,9 @@ export default function MusicPage() {
   const [volume, setVolume] = useState(75);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: session } = useSession();
-  const userId = (session?.user as any)?.id;
+  const [musicSearch, setMusicSearch] = useState("");
+  const { user } = useAuthStore();
+  const userId = user?.id;
 
   const { data: albums, loading: albumsLoading } = useApi<Album[]>("/api/music/albums");
   const { data: albumDetail, loading: songsLoading } = useApi<AlbumDetail>(
@@ -162,6 +163,8 @@ export default function MusicPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
         <Input
           placeholder="Search songs, albums, artists..."
+          value={musicSearch}
+          onChange={(e) => setMusicSearch(e.target.value)}
           className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
         />
       </div>
@@ -210,7 +213,7 @@ export default function MusicPage() {
           </div>
         ) : (albums && albums.length > 0) ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {albums.map((album) => (
+            {albums.filter((a) => !musicSearch || a.name.toLowerCase().includes(musicSearch.toLowerCase()) || (a.category || "").toLowerCase().includes(musicSearch.toLowerCase())).map((album) => (
               <button
                 key={album.id}
                 onClick={() => setSelectedAlbum(selectedAlbum === album.id ? null : album.id)}
@@ -250,7 +253,7 @@ export default function MusicPage() {
               </div>
             ) : (
               <div className="space-y-1">
-                {songs.map((song, i) => (
+                {songs.filter((s) => !musicSearch || s.title.toLowerCase().includes(musicSearch.toLowerCase()) || (s.artist || "").toLowerCase().includes(musicSearch.toLowerCase())).map((song, i) => (
                   <button
                     key={song.id}
                     onClick={() => playSong(song)}

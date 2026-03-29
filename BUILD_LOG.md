@@ -68,7 +68,7 @@
 |------|-----------|--------|
 | Dashboard | ✅ | Real stats, revenue/activity charts from DB |
 | Users | ✅ | Search, filter, block/unblock, delete |
-| Coaches | ✅ | Approval queue, approve/deny |
+| Coaches | ✅ | Apprwoval queue, approve/deny |
 | Analytics | ✅ | User growth, revenue, top coaches |
 | Subscriptions | ✅ | Plans, member counts, MRR |
 | Moderation | ✅ | Reports queue, resolve/dismiss |

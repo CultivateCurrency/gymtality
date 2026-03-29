@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import {
   Card,
@@ -92,7 +92,7 @@ function formatEventType(type: string) {
 }
 
 export default function CoachSchedulePage() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const [availability, setAvailability] = useState(initialAvailability);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
 
@@ -148,7 +148,7 @@ export default function CoachSchedulePage() {
       endTime,
       capacity: maxParticipants ? Number(maxParticipants) : null,
       location: eventLocation,
-      coachId: (session?.user as any)?.id,
+      coachId: user?.id,
     });
 
     if (result) {

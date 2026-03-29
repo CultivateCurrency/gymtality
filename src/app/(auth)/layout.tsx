@@ -1,19 +1,19 @@
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import Link from "next/link";
+
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-orange-500">GYMTALITY</span>
-          </h1>
-          <p className="text-zinc-400 text-sm mt-1">Your Fitness Mentality. 24/7.</p>
-        </div>
+    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(249,115,22,0.08),transparent_70%)] pointer-events-none" />
+
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center">
         {children}
+
+        <p className="mt-8 text-[11px] text-zinc-700 text-center">
+          By continuing, you agree to our{" "}
+          <Link href="/terms" className="hover:text-zinc-500 transition-colors">Terms</Link>
+          {" "}and{" "}
+          <Link href="/privacy" className="hover:text-zinc-500 transition-colors">Privacy Policy</Link>
+        </p>
       </div>
     </div>
   );

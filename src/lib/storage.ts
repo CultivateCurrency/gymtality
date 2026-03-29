@@ -10,14 +10,14 @@ const OCI_BUCKET = process.env.OCI_BUCKET || "gymtality-uploads";
 const OCI_REGION = process.env.OCI_REGION || "us-ashburn-1";
 const OCI_ACCESS_KEY = process.env.OCI_ACCESS_KEY || "";
 const OCI_SECRET_KEY = process.env.OCI_SECRET_KEY || "";
+const OCI_ENDPOINT = `https://${OCI_NAMESPACE}.compat.objectstorage.${OCI_REGION}.oraclecloud.com`;
 
 let _s3Client: S3Client | null = null;
 function getS3Client(): S3Client {
   if (!_s3Client) {
-    const endpoint = `https://${OCI_NAMESPACE}.compat.objectstorage.${OCI_REGION}.oraclecloud.com`;
     _s3Client = new S3Client({
       region: OCI_REGION,
-      endpoint,
+      endpoint: OCI_ENDPOINT,
       forcePathStyle: true,
       credentials: {
         accessKeyId: OCI_ACCESS_KEY,
@@ -46,7 +46,7 @@ export async function uploadFile(
   );
 
   // Public URL for the uploaded file
-  return `${endpoint}/n/${OCI_NAMESPACE}/b/${OCI_BUCKET}/o/${encodeURIComponent(key)}`;
+  return `${OCI_ENDPOINT}/n/${OCI_NAMESPACE}/b/${OCI_BUCKET}/o/${encodeURIComponent(key)}`;
 }
 
 // ─── Delete file ──────────────────────────────────────────────────────────

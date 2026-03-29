@@ -31,24 +31,6 @@ const RevenueAreaChart = dynamic(() => import("@/components/charts").then((m) =>
 const SmallBarChart = dynamic(() => import("@/components/charts").then((m) => m.SmallBarChart), { ssr: false, loading: () => <div className="h-32 flex items-center justify-center text-zinc-500">Loading...</div> });
 const SmallLineChart = dynamic(() => import("@/components/charts").then((m) => m.SmallLineChart), { ssr: false, loading: () => <div className="h-32 flex items-center justify-center text-zinc-500">Loading...</div> });
 
-const userGrowthData = [
-  { month: "Oct", users: 320 },
-  { month: "Nov", users: 480 },
-  { month: "Dec", users: 560 },
-  { month: "Jan", users: 720 },
-  { month: "Feb", users: 890 },
-  { month: "Mar", users: 1150 },
-];
-
-const revenueTrendData = [
-  { month: "Oct", revenue: 1800 },
-  { month: "Nov", revenue: 2900 },
-  { month: "Dec", revenue: 3400 },
-  { month: "Jan", revenue: 4200 },
-  { month: "Feb", revenue: 3800 },
-  { month: "Mar", revenue: 5100 },
-];
-
 interface TopTrainer {
   coach: {
     id: string;
@@ -79,6 +61,8 @@ interface AnalyticsData {
   usersByRole: UsersByRole[];
   pendingCoaches: number;
   pendingReports: number;
+  monthlyRevenue: { month: string; revenue: number }[];
+  dailyActivity: { day: string; users: number }[];
 }
 
 function getInitials(fullName: string): string {
@@ -210,12 +194,12 @@ export default function AdminAnalyticsPage() {
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Activity className="h-5 w-5 text-blue-500" />
-              Active Users Over Time
+              Active Users (Last 7 Days)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <GrowthLineChart data={userGrowthData} />
+              <GrowthLineChart data={data.dailyActivity} dataKey="users" />
             </div>
           </CardContent>
         </Card>
@@ -229,7 +213,7 @@ export default function AdminAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <RevenueAreaChart data={revenueTrendData} id="revGradAnalytics" />
+              <RevenueAreaChart data={data.monthlyRevenue} id="revGradAnalytics" />
             </div>
           </CardContent>
         </Card>
@@ -377,13 +361,7 @@ export default function AdminAnalyticsPage() {
               </div>
             </div>
             <div className="h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={[{ week: "W1", engagement: 340 }, { week: "W2", engagement: 520 }, { week: "W3", engagement: 480 }, { week: "W4", engagement: 610 }]}>
-                  <XAxis dataKey="week" tick={{ fill: "#71717a", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8, color: "#fff" }} />
-                  <Line type="monotone" dataKey="engagement" stroke="#a855f7" strokeWidth={2} dot={{ fill: "#a855f7", r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <SmallLineChart data={[{ week: "W1", engagement: 340 }, { week: "W2", engagement: 520 }, { week: "W3", engagement: 480 }, { week: "W4", engagement: 610 }]} dataKey="engagement" lineColor="#a855f7" />
             </div>
           </CardContent>
         </Card>

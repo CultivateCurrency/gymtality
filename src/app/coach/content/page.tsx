@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import { useUpload } from "@/hooks/use-upload";
 import {
@@ -75,7 +75,7 @@ interface WorkoutsResponse {
 }
 
 export default function CoachContentPage() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const { data: workoutsData, loading, error, refetch } = useApi<WorkoutsResponse>("/api/workouts");
   const { mutate: publishPlan, loading: publishing, error: publishError } = useMutation<WorkoutPlan>("/api/workouts", "POST");
   const { upload, uploading: uploadingVideo } = useUpload();
@@ -121,7 +121,7 @@ export default function CoachContentPage() {
   const handlePublish = async () => {
     if (!planName.trim()) return;
     const result = await publishPlan({
-      coachId: (session?.user as any)?.id,
+      coachId: user?.id,
       name: planName,
       description: planDescription,
       type: planType,

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { useUpload } from "@/hooks/use-upload";
 import {
@@ -34,6 +35,13 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const coachCategories = [
   "Workout Trainer",
@@ -55,7 +63,8 @@ interface UserProfile {
 }
 
 export default function CoachSettingsPage() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { user: storeUser, logout } = useAuthStore();
   const { data: profile, loading: profileLoading } = useApi<UserProfile>("/api/users/me");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -69,6 +78,13 @@ export default function CoachSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { upload, uploading } = useUpload();
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Populate state from API profile data
   useEffect(() => {
@@ -76,11 +92,11 @@ export default function CoachSettingsPage() {
       setFullName(profile.fullName || "");
       setEmail(profile.email || "");
       setProfilePhoto(profile.profilePhoto || null);
-    } else if (session?.user) {
-      setFullName(session.user.name || "");
-      setEmail(session.user.email || "");
+    } else if (storeUser) {
+      setFullName(storeUser.fullName || "");
+      setEmail(storeUser.email || "");
     }
-  }, [profile, session]);
+  }, [profile, storeUser]);
 
   const getInitials = (name: string) => {
     if (!name) return "?";
@@ -114,27 +130,23 @@ export default function CoachSettingsPage() {
   };
 
   const handleSaveChanges = async () => {
-    const userId = profile?.id || (session?.user as any)?.id;
+    const userId = profile?.id || storeUser?.id;
     if (!userId) return;
     setSaving(true);
     try {
       await apiFetch(`/api/users/${userId}`, {
         method: "PUT",
-        body: JSON.stringify({
-          fullName,
-          email,
-          profilePhoto,
-          coachCategory: selectedCategory,
-        }),
+        body: JSON.stringify({ fullName, profilePhoto }),
       });
-    } catch (err) {
-      console.error("Failed to save profile:", err);
+      toast.success("Profile saved successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save profile");
     } finally {
       setSaving(false);
     }
   };
 
-  if (status === "loading" || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -229,9 +241,58 @@ export default function CoachSettingsPage() {
             <Button
               variant="outline"
               className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              onClick={() => { setPasswordDialogOpen(true); setPasswordError(""); setPasswordSuccess(false); }}
             >
               Change Password
             </Button>
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+              <DialogContent className="bg-zinc-900 border-zinc-800">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Change Password</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {passwordError && (
+                    <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">{passwordError}</p>
+                  )}
+                  {passwordSuccess && (
+                    <p className="text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg p-3">Password changed successfully!</p>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-zinc-300">Current Password</label>
+                    <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="bg-zinc-800 border-zinc-700 text-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-zinc-300">New Password</label>
+                    <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="bg-zinc-800 border-zinc-700 text-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-zinc-300">Confirm New Password</label>
+                    <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="bg-zinc-800 border-zinc-700 text-white" />
+                  </div>
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={changingPassword}
+                    onClick={async () => {
+                      setPasswordError("");
+                      setPasswordSuccess(false);
+                      if (newPassword !== confirmPassword) { setPasswordError("Passwords don't match"); return; }
+                      if (newPassword.length < 6) { setPasswordError("Password must be at least 6 characters"); return; }
+                      setChangingPassword(true);
+                      try {
+                        await apiFetch("/api/users/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
+                        setPasswordSuccess(true);
+                        setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+                      } catch (err: any) {
+                        setPasswordError(err.message || "Failed to change password");
+                      } finally { setChangingPassword(false); }
+                    }}
+                  >
+                    {changingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Change Password
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <Button
@@ -430,7 +491,7 @@ export default function CoachSettingsPage() {
       <Button
         variant="outline"
         className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-        onClick={() => signOut({ callbackUrl: "/login" })}
+        onClick={() => { logout(); router.push("/login"); }}
       >
         <LogOut className="h-4 w-4 mr-2" />
         Logout

@@ -1,20 +1,48 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { ApiResponse } from "@/types";
 
-// Generic fetch wrapper that handles the { success, data, error } pattern
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+function getToken(): string | null {
+  // Read from zustand-persisted localStorage key
+  try {
+    const raw = localStorage.getItem("gymtality-auth");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+  const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
+  const token = getToken();
+
+  const res = await fetch(fullUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
     ...options,
   });
-  const json: ApiResponse<T> = await res.json();
+
+  if (res.status === 401) {
+    // Clear auth and redirect to login
+    localStorage.removeItem("gymtality-auth");
+    document.cookie = "gymtality_auth=; path=/; max-age=0";
+    document.cookie = "gymtality_role=; path=/; max-age=0";
+    window.location.href = "/login";
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  const json = await res.json();
   if (!json.success) throw new Error(json.error || "Request failed");
   return json.data as T;
 }
 
-// GET hook with loading/error state
 export function useApi<T>(url: string | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(!!url);
@@ -37,8 +65,7 @@ export function useApi<T>(url: string | null) {
   return { data, loading, error, refetch };
 }
 
-// Mutation helper (POST/PUT/DELETE)
-export function useMutation<T, B = unknown>(url: string, method: "POST" | "PUT" | "DELETE" = "POST") {
+export function useMutation<T, B = unknown>(url: string, method: "POST" | "PUT" | "PATCH" | "DELETE" = "POST") {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

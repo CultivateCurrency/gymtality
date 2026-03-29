@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi } from "@/hooks/use-api";
 import {
   Card,
@@ -44,10 +44,10 @@ interface DashboardData {
 }
 
 export default function CoachDashboard() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const { data, loading, error } = useApi<DashboardData>("/api/coach/dashboard");
 
-  const firstName = session?.user?.name?.split(" ")[0] || "Coach";
+  const firstName = user?.fullName?.split(" ")[0] || "Coach";
 
   if (loading) {
     return (

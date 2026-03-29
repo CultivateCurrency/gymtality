@@ -1,127 +1,105 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  Dumbbell,
-  Users,
-  Calendar,
-  Radio,
-  Music,
-  ShoppingBag,
-  Trophy,
-  ArrowRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
-const features = [
-  { icon: Dumbbell, title: "Workouts", desc: "Home & gym plans with video guides" },
-  { icon: Users, title: "Community", desc: "Connect, share, and train together" },
-  { icon: Calendar, title: "Events", desc: "Classes, workshops, and appointments" },
-  { icon: Radio, title: "Live Streaming", desc: "Join live classes from anywhere" },
-  { icon: Music, title: "Music", desc: "Workout playlists and albums" },
-  { icon: ShoppingBag, title: "Shop", desc: "Merchandise and supplements" },
-  { icon: Trophy, title: "Challenges", desc: "Compete on leaderboards" },
-  { icon: Users, title: "Coaching", desc: "1:1 sessions with certified trainers" },
-];
+const rotatingWords = ["Strength", "Discipline", "Focus", "Clarity", "Consistency"];
 
-export default function SplashPage() {
+export default function WelcomePage() {
+  const [wordIndex, setWordIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setWordIndex((i) => (i + 1) % rotatingWords.length);
+        setVisible(true);
+      }, 350);
+    }, 2600);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-transparent to-zinc-950" />
-        <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-40">
-          <div className="max-w-2xl">
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none mb-6">
-              <span className="text-orange-500">GYMTALITY</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-zinc-300 mb-2 font-light">
-              Your Fitness Mentality. 24/7.
-            </p>
-            <p className="text-lg text-zinc-400 mb-8 max-w-lg">
-              Your complete fitness ecosystem — workouts, community, live
-              classes, coaching, music, and more. Everything you need to
-              transform your body and mind.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/signup">
-                <Button
-                  size="lg"
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg px-8 h-14"
-                >
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white font-semibold text-lg px-8 h-14"
-                >
-                  Sign In
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-zinc-950">
+      {/* Radial glow background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(249,115,22,0.12),transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,rgba(249,115,22,0.05),transparent_70%)]" />
 
-      {/* Features Grid */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Everything You Need to{" "}
-          <span className="text-orange-500">Compete</span>
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 hover:border-orange-500/50 transition-colors group"
-            >
-              <feature.icon className="w-8 h-8 text-orange-500 mb-3 group-hover:scale-110 transition-transform" />
-              <h3 className="font-semibold text-white mb-1">{feature.title}</h3>
-              <p className="text-sm text-zinc-400">{feature.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Subtle noise texture overlay */}
+      <div className="absolute inset-0 opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJuIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWx0ZXI9InVybCgjbikiIG9wYWNpdHk9IjEiLz48L3N2Zz4=')]" />
 
-      {/* CTA for Coaches */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="bg-gradient-to-r from-orange-500/10 to-zinc-900 border border-orange-500/20 rounded-2xl p-10 md:p-16 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Are You a Coach or Trainer?
-          </h2>
-          <p className="text-zinc-400 max-w-lg mx-auto mb-8">
-            Upload your programs, manage clients, host live classes, and grow
-            your business — all from one platform.
-          </p>
-          <Link href="/signup">
-            <Button
-              size="lg"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 h-14"
-            >
-              Join as a Coach
-            </Button>
+      {/* Main content */}
+      <main
+        className={`relative z-10 flex flex-col items-center text-center px-6 w-full max-w-sm mx-auto transition-opacity duration-700 ${
+          mounted ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {/* Rotating word */}
+        <div className="h-7 mb-5 flex items-center justify-center">
+          <span
+            className="text-[13px] font-bold uppercase tracking-[0.25em] text-orange-400 transition-opacity duration-300"
+            style={{ opacity: visible ? 1 : 0 }}
+          >
+            {rotatingWords[wordIndex]}
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h1 className="text-[2.6rem] md:text-5xl font-black tracking-tight leading-[1.08] text-white mb-5">
+          Train Your Body.<br />
+          <span className="text-orange-400">Master Your Mind.</span>
+        </h1>
+
+        {/* Subheadline */}
+        <p className="text-[14px] text-zinc-400 leading-relaxed mb-10 max-w-[300px]">
+          Your complete fitness ecosystem — workouts, live coaching, community, and nutrition — built for a holistic transformation.
+        </p>
+
+        {/* CTA buttons */}
+        <div className="flex flex-col w-full gap-3 mb-9">
+          <Link href="/signup" className="w-full">
+            <button className="group w-full flex items-center justify-center gap-2 py-[14px] px-8 bg-orange-500 hover:bg-orange-400 text-white font-bold text-[14px] rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/25 active:scale-[0.98]">
+              Get Started
+              <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </Link>
+          <Link href="/member/dashboard" className="w-full">
+            <button className="w-full py-[14px] px-8 bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 hover:border-white/15 text-zinc-300 hover:text-white font-semibold text-[14px] rounded-xl transition-all duration-200 active:scale-[0.98]">
+              Continue as Guest
+            </button>
           </Link>
         </div>
-      </section>
+
+        {/* Login link */}
+        <p className="text-[12px] text-zinc-600">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="text-orange-400 hover:text-orange-300 font-semibold transition-colors"
+          >
+            Log In
+          </Link>
+        </p>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-zinc-500">
-            &copy; {new Date().getFullYear()} Gymtality. All rights
-            reserved.
-          </p>
-          <div className="flex gap-6 text-sm text-zinc-500">
-            <Link href="/privacy" className="hover:text-white">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-white">
-              Terms of Service
-            </Link>
-          </div>
-        </div>
+      <footer className="relative z-10 absolute bottom-0 left-0 right-0 pb-7 flex items-center justify-center gap-5 text-[11px] text-zinc-700">
+        <Link href="/terms" className="hover:text-zinc-500 transition-colors">
+          Terms
+        </Link>
+        <span>·</span>
+        <Link href="/privacy" className="hover:text-zinc-500 transition-colors">
+          Privacy
+        </Link>
+        <span>·</span>
+        <span>&copy; {new Date().getFullYear()} Gymtality</span>
       </footer>
     </div>
   );

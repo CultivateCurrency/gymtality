@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi } from "@/hooks/use-api";
 import {
   Card,
@@ -35,9 +35,9 @@ interface DonationsData {
 }
 
 export default function CoachDonationsPage() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const { data, loading, error, refetch } = useApi<DonationsData>(
-    session?.user ? "/api/coach/donations" : null
+    user ? "/api/coach/donations" : null
   );
 
   const donations = data?.donations ?? [];

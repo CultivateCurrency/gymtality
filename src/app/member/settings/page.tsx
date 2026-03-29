@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   User,
   Mail,
@@ -36,10 +42,18 @@ import {
   X,
   Ban,
   Trash2,
+  Watch,
+  Smartphone,
+  RefreshCw,
+  Unlink,
+  Bell,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { useUpload } from "@/hooks/use-upload";
-import { signOut } from "next-auth/react";
+import { useAutoSave } from "@/hooks/use-auto-save";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/auth-store";
+import { toast } from "sonner";
 
 interface SubscriptionData {
   id: string;
@@ -114,6 +128,8 @@ interface UserProfile {
 }
 
 function SettingsContent() {
+  const router = useRouter();
+  const { logout } = useAuthStore();
   const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -128,6 +144,21 @@ function SettingsContent() {
   const { upload, uploading } = useUpload();
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; fullName: string; username: string }[]>([]);
   const [unblocking, setUnblocking] = useState<string | null>(null);
+  const [wearableConnections, setWearableConnections] = useState<{ id: string; provider: string; connected: boolean; lastSyncedAt: string | null }[]>([]);
+  const [connectingWearable, setConnectingWearable] = useState<string | null>(null);
+  const [disconnectingWearable, setDisconnectingWearable] = useState<string | null>(null);
+  const [syncingWearable, setSyncingWearable] = useState<string | null>(null);
+  const [wearableMessage, setWearableMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({});
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
 
   const { data: userData } = useApi<UserProfile>("/api/users/me");
   const { data: subData } = useApi<SubscriptionData>("/api/admin/subscriptions?mySubscription=true");
@@ -142,6 +173,23 @@ function SettingsContent() {
     }
   }, [userData]);
 
+  // Auto-save profile changes
+  const profileData = useMemo(() => ({ fullName, username, email, profilePhoto }), [fullName, username, email, profilePhoto]);
+  const saveProfile = useCallback(async () => {
+    if (!userData?.id) return;
+    try {
+      await apiFetch(`/api/users/${userData.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ fullName, username, email, profilePhoto }),
+      });
+      toast.success("Profile auto-saved");
+    } catch {
+      toast.error("Auto-save failed");
+    }
+  }, [userData?.id, fullName, username, email, profilePhoto]);
+
+  useAutoSave({ data: profileData, onSave: saveProfile, delay: 3000, enabled: !!userData?.id });
+
   // Load blocked users
   useEffect(() => {
     fetch("/api/users/me/blocked")
@@ -150,6 +198,58 @@ function SettingsContent() {
       .catch(() => {});
   }, []);
 
+  // Load wearable connections
+  const loadWearables = useCallback(() => {
+    fetch("/api/wearables")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setWearableConnections(d.data || []); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { loadWearables(); }, [loadWearables]);
+
+  // Load notification preferences
+  useEffect(() => {
+    fetch("/api/notifications/preferences")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data) {
+          const { id, userId, ...prefs } = d.data;
+          setNotifPrefs(prefs);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setNotifLoading(false));
+  }, []);
+
+  const handleNotifToggle = async (key: string, value: boolean) => {
+    const updated = { ...notifPrefs, [key]: value };
+    setNotifPrefs(updated);
+    setNotifSaving(true);
+    try {
+      await apiFetch("/api/notifications/preferences", {
+        method: "PUT",
+        body: JSON.stringify({ [key]: value }),
+      });
+    } catch {
+      setNotifPrefs((prev) => ({ ...prev, [key]: !value }));
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
+  // Check wearable connection status from URL params
+  useEffect(() => {
+    const wearableStatus = searchParams.get("wearable");
+    if (wearableStatus === "success") {
+      setWearableMessage({ type: "success", text: "Google Fit connected successfully!" });
+      loadWearables();
+    } else if (wearableStatus === "error") {
+      const reason = searchParams.get("reason");
+      setWearableMessage({ type: "error", text: reason === "denied" ? "Connection was cancelled." : "Failed to connect. Please try again." });
+    }
+  }, [searchParams, loadWearables]);
+
   const handleUnblock = async (blockedId: string) => {
     setUnblocking(blockedId);
     try {
@@ -157,6 +257,57 @@ function SettingsContent() {
       setBlockedUsers((prev) => prev.filter((u) => u.id !== blockedId));
     } catch { /* ignore */ } finally {
       setUnblocking(null);
+    }
+  };
+
+  const handleConnectWearable = async (provider: string) => {
+    setConnectingWearable(provider);
+    setWearableMessage(null);
+    try {
+      const res = await apiFetch<{ url: string }>("/api/wearables/connect", {
+        method: "POST",
+        body: JSON.stringify({ provider }),
+      });
+      if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err: any) {
+      setWearableMessage({ type: "error", text: err.message || "Failed to connect" });
+    } finally {
+      setConnectingWearable(null);
+    }
+  };
+
+  const handleDisconnectWearable = async (provider: string) => {
+    setDisconnectingWearable(provider);
+    try {
+      await apiFetch("/api/wearables/disconnect", {
+        method: "POST",
+        body: JSON.stringify({ provider }),
+      });
+      loadWearables();
+      setWearableMessage({ type: "success", text: "Disconnected successfully." });
+    } catch {
+      setWearableMessage({ type: "error", text: "Failed to disconnect." });
+    } finally {
+      setDisconnectingWearable(null);
+    }
+  };
+
+  const handleSyncWearable = async (provider: string) => {
+    setSyncingWearable(provider);
+    setWearableMessage(null);
+    try {
+      const res = await apiFetch<{ synced: number; lastSyncedAt: string }>("/api/wearables/sync", {
+        method: "POST",
+        body: JSON.stringify({ provider, days: 7 }),
+      });
+      loadWearables();
+      setWearableMessage({ type: "success", text: `Synced ${res.synced} data points from Google Fit!` });
+    } catch (err: any) {
+      setWearableMessage({ type: "error", text: err.message || "Sync failed" });
+    } finally {
+      setSyncingWearable(null);
     }
   };
 
@@ -181,7 +332,7 @@ function SettingsContent() {
         window.location.href = res.url;
       }
     } catch (err: any) {
-      alert(err.message || "Failed to start checkout");
+      toast.error(err.message || "Failed to start checkout");
     } finally {
       setSubscribing(null);
     }
@@ -198,7 +349,7 @@ function SettingsContent() {
         window.location.href = res.url;
       }
     } catch (err: any) {
-      alert(err.message || "Failed to open billing portal");
+      toast.error(err.message || "Failed to open billing portal");
     } finally {
       setManagingPortal(false);
     }
@@ -315,9 +466,61 @@ function SettingsContent() {
               <Lock className="h-4 w-4 text-zinc-500" />
               Password
             </label>
-            <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+            <Button
+              variant="outline"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              onClick={() => { setPasswordDialogOpen(true); setPasswordError(""); setPasswordSuccess(false); }}
+            >
               Change Password
             </Button>
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+              <DialogContent className="bg-zinc-900 border-zinc-800">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Change Password</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {passwordError && (
+                    <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">{passwordError}</p>
+                  )}
+                  {passwordSuccess && (
+                    <p className="text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg p-3">Password changed successfully!</p>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-zinc-300">Current Password</label>
+                    <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="bg-zinc-800 border-zinc-700 text-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-zinc-300">New Password</label>
+                    <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="bg-zinc-800 border-zinc-700 text-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-zinc-300">Confirm New Password</label>
+                    <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="bg-zinc-800 border-zinc-700 text-white" />
+                  </div>
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={changingPassword}
+                    onClick={async () => {
+                      setPasswordError("");
+                      setPasswordSuccess(false);
+                      if (newPassword !== confirmPassword) { setPasswordError("Passwords don't match"); return; }
+                      if (newPassword.length < 6) { setPasswordError("Password must be at least 6 characters"); return; }
+                      setChangingPassword(true);
+                      try {
+                        await apiFetch("/api/users/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
+                        setPasswordSuccess(true);
+                        setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+                      } catch (err: any) {
+                        setPasswordError(err.message || "Failed to change password");
+                      } finally { setChangingPassword(false); }
+                    }}
+                  >
+                    {changingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Change Password
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <Button
@@ -334,7 +537,7 @@ function SettingsContent() {
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 3000);
               } catch (e: any) {
-                alert(e.message || "Failed to save");
+                toast.error(e.message || "Failed to save");
               } finally {
                 setSaving(false);
               }
@@ -363,6 +566,109 @@ function SettingsContent() {
             </div>
             <ChevronRight className="h-4 w-4 text-zinc-600" />
           </Link>
+        </CardContent>
+      </Card>
+
+      {/* Wearable Integration */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Watch className="h-5 w-5 text-orange-500" />
+            Linked Wearables
+          </CardTitle>
+          <CardDescription className="text-zinc-400">
+            Connect your fitness trackers to sync health data automatically.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {wearableMessage && (
+            <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+              wearableMessage.type === "success"
+                ? "bg-green-500/10 border border-green-500/30 text-green-400"
+                : "bg-red-500/10 border border-red-500/30 text-red-400"
+            }`}>
+              {wearableMessage.type === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <X className="h-4 w-4 shrink-0" />}
+              <span className="flex-1">{wearableMessage.text}</span>
+              <button onClick={() => setWearableMessage(null)} className="opacity-50 hover:opacity-100">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+
+          {/* Google Fit */}
+          {(() => {
+            const googleConn = wearableConnections.find((c) => c.provider === "GOOGLE_FIT" && c.connected);
+            return (
+              <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800 border border-zinc-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/20">
+                    <Watch className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Google Fit</p>
+                    {googleConn ? (
+                      <p className="text-xs text-green-400">
+                        Connected {googleConn.lastSyncedAt ? `· Last synced ${new Date(googleConn.lastSyncedAt).toLocaleDateString()}` : ""}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-zinc-500">Sync steps, heart rate, calories & more</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {googleConn ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-zinc-600 text-zinc-300 hover:bg-zinc-700"
+                        disabled={syncingWearable === "GOOGLE_FIT"}
+                        onClick={() => handleSyncWearable("GOOGLE_FIT")}
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1 ${syncingWearable === "GOOGLE_FIT" ? "animate-spin" : ""}`} />
+                        Sync
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                        disabled={disconnectingWearable === "GOOGLE_FIT"}
+                        onClick={() => handleDisconnectWearable("GOOGLE_FIT")}
+                      >
+                        {disconnectingWearable === "GOOGLE_FIT" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlink className="h-3 w-3" />}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={connectingWearable === "GOOGLE_FIT"}
+                      onClick={() => handleConnectWearable("GOOGLE_FIT")}
+                    >
+                      {connectingWearable === "GOOGLE_FIT" ? (
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                      ) : null}
+                      Connect
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Apple Health */}
+          <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800 border border-zinc-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-pink-500/20">
+                <Smartphone className="h-5 w-5 text-pink-400" />
+              </div>
+              <div>
+                <p className="font-medium text-white">Apple Health</p>
+                <p className="text-xs text-zinc-500">Requires Gymtality iOS app</p>
+              </div>
+            </div>
+            <Badge className="bg-zinc-700 text-zinc-400 border-zinc-600 text-xs">Coming Soon</Badge>
+          </div>
         </CardContent>
       </Card>
 
@@ -536,6 +842,58 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      {/* Notification Preferences */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Bell className="h-5 w-5 text-orange-500" />
+            Notification Preferences
+          </CardTitle>
+          <CardDescription className="text-zinc-400">
+            Choose which notifications you want to receive.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {notifLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 text-orange-500 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {[
+                { key: "likes", label: "Likes", desc: "When someone likes your post" },
+                { key: "comments", label: "Comments", desc: "When someone comments on your post" },
+                { key: "follows", label: "Follows", desc: "When someone follows you" },
+                { key: "events", label: "Events", desc: "Event reminders and updates" },
+                { key: "workouts", label: "Workouts", desc: "Workout reminders and suggestions" },
+                { key: "payments", label: "Payments", desc: "Payment confirmations and receipts" },
+                { key: "streams", label: "Live Streams", desc: "When a coach goes live" },
+                { key: "system", label: "System", desc: "Platform updates and announcements" },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between py-2">
+                  <div>
+                    <p className="text-sm font-medium text-white">{item.label}</p>
+                    <p className="text-xs text-zinc-500">{item.desc}</p>
+                  </div>
+                  <button
+                    onClick={() => handleNotifToggle(item.key, !notifPrefs[item.key])}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${
+                      notifPrefs[item.key] ? "bg-orange-500" : "bg-zinc-700"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
+                        notifPrefs[item.key] ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Blocked Accounts */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
@@ -582,7 +940,7 @@ function SettingsContent() {
       <Button
         variant="outline"
         className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-        onClick={() => signOut({ callbackUrl: "/login" })}
+        onClick={() => { logout(); router.push("/login"); }}
       >
         <LogOut className="h-4 w-4 mr-2" />
         Logout

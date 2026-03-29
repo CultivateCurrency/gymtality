@@ -28,9 +28,12 @@ import {
   Search,
   Users,
   Loader2,
+  Send,
+  X,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
+import { toast } from "sonner";
 
 function timeAgo(date: string) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -41,6 +44,13 @@ function timeAgo(date: string) {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+interface Comment {
+  id: string;
+  text: string;
+  createdAt: string;
+  user: { id: string; fullName: string; username: string };
 }
 
 interface Post {
@@ -75,13 +85,32 @@ export default function CommunityPage() {
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostCaption, setNewPostCaption] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: session } = useSession();
-  const userId = (session?.user as any)?.id;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [loadingComments, setLoadingComments] = useState<string | null>(null);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupDescription, setNewGroupDescription] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [discoverSearch, setDiscoverSearch] = useState("");
+  const { user } = useAuthStore();
+  const userId = user?.id;
 
   const { data: postsData, loading: postsLoading, refetch: refetchPosts } = useApi<PostsResponse>("/api/community/posts?page=1&limit=20");
   const { data: groupsData, loading: groupsLoading, refetch: refetchGroups } = useApi<GroupsResponse>("/api/community/groups?page=1&limit=20");
 
-  const posts = postsData?.posts ?? [];
+  const allPosts = postsData?.posts ?? [];
+  const posts = searchQuery
+    ? allPosts.filter((p) =>
+        (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.caption || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allPosts;
   const groups = groupsData?.groups ?? [];
 
   const handlePublish = async () => {
@@ -95,9 +124,7 @@ export default function CommunityPage() {
       setNewPostCaption("");
       setDialogOpen(false);
       refetchPosts();
-    } catch {
-      // handle error silently
-    }
+    } catch {}
   };
 
   const handleLike = async (postId: string) => {
@@ -133,6 +160,72 @@ export default function CommunityPage() {
     } catch {}
   };
 
+  const loadComments = async (postId: string) => {
+    if (expandedComments === postId) {
+      setExpandedComments(null);
+      return;
+    }
+    setExpandedComments(postId);
+    setLoadingComments(postId);
+    try {
+      const res = await fetch(`/api/community/posts/${postId}/comments`);
+      const data = await res.json();
+      if (data.success) {
+        setComments((prev) => ({ ...prev, [postId]: data.data || [] }));
+      }
+    } catch {}
+    setLoadingComments(null);
+  };
+
+  const handleComment = async (postId: string) => {
+    if (!commentText.trim() || !userId) return;
+    setPostingComment(true);
+    try {
+      await apiFetch(`/api/community/posts/${postId}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ text: commentText }),
+      });
+      setCommentText("");
+      // Reload comments
+      const res = await fetch(`/api/community/posts/${postId}/comments`);
+      const data = await res.json();
+      if (data.success) {
+        setComments((prev) => ({ ...prev, [postId]: data.data || [] }));
+      }
+      refetchPosts();
+    } catch {}
+    setPostingComment(false);
+  };
+
+  const handleShare = async (post: Post) => {
+    const url = `${window.location.origin}/member/community?post=${post.id}`;
+    const text = post.title || post.caption || "Check out this post on Gymtality!";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: text, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
+    setCreatingGroup(true);
+    try {
+      await apiFetch("/api/community/groups", {
+        method: "POST",
+        body: JSON.stringify({ name: newGroupName, description: newGroupDescription || null }),
+      });
+      setNewGroupName("");
+      setNewGroupDescription("");
+      setCreateGroupOpen(false);
+      refetchGroups();
+    } catch {}
+    setCreatingGroup(false);
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -141,12 +234,32 @@ export default function CommunityPage() {
           <Button
             variant="outline"
             className="border-zinc-800 text-zinc-300 hover:bg-zinc-800"
+            onClick={() => setShowSearch(!showSearch)}
           >
             <Search className="h-4 w-4 mr-2" />
             Search
           </Button>
         </div>
       </div>
+
+      {/* Search Bar */}
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+          <Input
+            placeholder="Search posts, people..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
+            autoFocus
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       <Tabs defaultValue="feed" className="w-full">
         <TabsList className="bg-zinc-900 border border-zinc-800">
@@ -170,7 +283,7 @@ export default function CommunityPage() {
                   <div className="flex items-center gap-3 cursor-pointer">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-orange-500/20 text-orange-500">
-                        {(session?.user?.name || "U").charAt(0)}
+                        {(user?.fullName || "U").charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 bg-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-500 hover:bg-zinc-700 transition">
@@ -290,7 +403,10 @@ export default function CommunityPage() {
                     <Heart className="h-4 w-4" />
                     {post._count.likes}
                   </button>
-                  <button className="flex items-center gap-1.5 text-zinc-400 hover:text-blue-400 transition text-sm">
+                  <button
+                    onClick={() => loadComments(post.id)}
+                    className={`flex items-center gap-1.5 transition text-sm ${expandedComments === post.id ? "text-blue-400" : "text-zinc-400 hover:text-blue-400"}`}
+                  >
                     <MessageCircle className="h-4 w-4" />
                     {post._count.comments}
                   </button>
@@ -301,10 +417,62 @@ export default function CommunityPage() {
                     <Bookmark className="h-4 w-4" />
                     {post._count.saves}
                   </button>
-                  <button className="flex items-center gap-1.5 text-zinc-400 hover:text-green-400 transition text-sm ml-auto">
+                  <button
+                    onClick={() => handleShare(post)}
+                    className="flex items-center gap-1.5 text-zinc-400 hover:text-green-400 transition text-sm ml-auto"
+                  >
                     <Share2 className="h-4 w-4" />
                   </button>
                 </div>
+
+                {/* Comments Section */}
+                {expandedComments === post.id && (
+                  <div className="space-y-3 pt-2 border-t border-zinc-800">
+                    {loadingComments === post.id ? (
+                      <div className="flex justify-center py-2">
+                        <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <>
+                        {(comments[post.id] || []).map((c) => (
+                          <div key={c.id} className="flex gap-2">
+                            <Avatar className="h-7 w-7">
+                              <AvatarFallback className="bg-zinc-700 text-zinc-400 text-xs">
+                                {c.user.fullName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 bg-zinc-800 rounded-lg px-3 py-2">
+                              <p className="text-xs font-medium text-white">{c.user.fullName}</p>
+                              <p className="text-xs text-zinc-300">{c.text}</p>
+                              <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(c.createdAt)}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {(comments[post.id] || []).length === 0 && (
+                          <p className="text-xs text-zinc-500 text-center py-2">No comments yet.</p>
+                        )}
+                        {/* Add Comment */}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Write a comment..."
+                            value={expandedComments === post.id ? commentText : ""}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            className="bg-zinc-800 border-zinc-700 text-white text-sm h-9"
+                            onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
+                          />
+                          <Button
+                            size="sm"
+                            className="bg-orange-500 hover:bg-orange-600 text-white h-9 px-3"
+                            disabled={postingComment || !commentText.trim()}
+                            onClick={() => handleComment(post.id)}
+                          >
+                            {postingComment ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -312,16 +480,54 @@ export default function CommunityPage() {
           {/* Empty */}
           {!postsLoading && posts.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-zinc-400">No posts yet. Be the first to share!</p>
+              <p className="text-zinc-400">{searchQuery ? "No posts match your search." : "No posts yet. Be the first to share!"}</p>
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="groups" className="space-y-4 mt-4">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white mb-4">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Group
-          </Button>
+          <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white mb-4">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Group
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-zinc-900 border-zinc-800">
+              <DialogHeader>
+                <DialogTitle className="text-white">Create Group</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm text-zinc-300">Group Name</label>
+                  <Input
+                    placeholder="e.g. Morning Runners"
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-zinc-300">Description (optional)</label>
+                  <Textarea
+                    placeholder="What's this group about?"
+                    value={newGroupDescription}
+                    onChange={(e) => setNewGroupDescription(e.target.value)}
+                    rows={3}
+                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  />
+                </div>
+                <Button
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  disabled={creatingGroup || !newGroupName.trim()}
+                  onClick={handleCreateGroup}
+                >
+                  {creatingGroup ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Create Group
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {groupsLoading && (
             <div className="flex items-center justify-center py-8">
@@ -366,6 +572,8 @@ export default function CommunityPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Search people..."
+              value={discoverSearch}
+              onChange={(e) => setDiscoverSearch(e.target.value)}
               className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
             />
           </div>

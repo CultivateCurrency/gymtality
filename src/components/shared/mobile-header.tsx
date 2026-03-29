@@ -168,8 +168,8 @@ export function MobileHeader({ variant }: { variant: "member" | "coach" | "admin
         <div className="flex items-center justify-between px-4 py-4 border-b border-zinc-800/60">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center">
-              <Dumbbell size={14} className="text-white" />
-            </div>
+            <Dumbbell size={14} className="text-white" />
+          </div>
             <span className="text-sm font-black text-white">GYMTALITY</span>
           </div>
           <button

@@ -10,6 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   CalendarDays,
   Clock,
   MapPin,
@@ -19,9 +25,12 @@ import {
   Filter,
   CalendarPlus,
   Loader2,
+  QrCode,
+  Ticket,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
+import { toast } from "sonner";
 
 type ViewMode = "month" | "week" | "day";
 type EventType = "LIVE_CLASS" | "IN_PERSON" | "WORKSHOP";
@@ -37,6 +46,8 @@ const FILTER_CATEGORIES: FilterCategory[] = [
   "All", "Classes", "Gym Events", "Livestreams", "Challenges", "Personal Sessions",
 ];
 
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 function filterToType(filter: string): string | null {
   const map: Record<string, string> = { Classes: "LIVE_CLASS", "Gym Events": "IN_PERSON", Livestreams: "LIVE_CLASS", Challenges: "WORKSHOP" };
   return map[filter] || null;
@@ -48,6 +59,32 @@ function formatEventDate(iso: string) {
 
 function formatEventTime(start: string, end: string) {
   return `${new Date(start).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} - ${new Date(end).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+}
+
+function generateICSFile(event: EventItem) {
+  const start = new Date(event.startTime).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const end = new Date(event.endTime).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Gymtality//Events//EN",
+    "BEGIN:VEVENT",
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${event.title}`,
+    `DESCRIPTION:${event.description || ""}`,
+    `LOCATION:${event.location || ""}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${event.title.replace(/\s+/g, "_")}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 interface EventItem {
@@ -64,15 +101,32 @@ interface EventItem {
   _count: { bookings: number };
 }
 
+interface BookingItem {
+  id: string;
+  eventId: string;
+  status: string;
+  qrCode: string | null;
+  bookedAt: string;
+  event: { id: string; title: string; startTime: string; endTime: string; location: string | null; type: string };
+}
+
 interface EventsResponse {
   events: EventItem[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
 export default function EventsPage() {
+  const now = new Date();
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("All");
-  const { data: session } = useSession();
+  const [calMonth, setCalMonth] = useState(now.getMonth());
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const { user } = useAuthStore();
+  const [selectedQR, setSelectedQR] = useState<{ eventTitle: string; qrCode: string } | null>(null);
+
+  const userId = user?.id;
+  const { data: bookingsData } = useApi<BookingItem[]>(userId ? `/api/events/bookings?userId=${userId}` : null);
+  const myBookings = bookingsData ?? [];
 
   const typeParam = activeFilter !== "All" ? filterToType(activeFilter) : null;
   const url = `/api/events?upcoming=true&page=1&limit=20${typeParam ? `&type=${typeParam}` : ""}`;
@@ -81,7 +135,6 @@ export default function EventsPage() {
   const events = data?.events ?? [];
 
   const handleRSVP = async (eventId: string) => {
-    const userId = (session?.user as any)?.id;
     if (!userId) return;
     try {
       await apiFetch(`/api/events/${eventId}/book`, {
@@ -89,10 +142,41 @@ export default function EventsPage() {
         body: JSON.stringify({ userId }),
       });
       refetch();
-    } catch {
-      // handle error silently for now
+      toast.success("Event booked successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to book event");
     }
   };
+
+  const prevMonth = () => {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); }
+    else { setCalMonth(calMonth - 1); }
+  };
+
+  const nextMonth = () => {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1); }
+    else { setCalMonth(calMonth + 1); }
+  };
+
+  // Get events for the displayed month
+  const monthEvents = events.filter((e) => {
+    const d = new Date(e.startTime);
+    return d.getMonth() === calMonth && d.getFullYear() === calYear;
+  });
+
+  // Build calendar grid
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const calendarDays = [];
+  for (let i = 0; i < firstDay; i++) calendarDays.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
+
+  const eventsByDay: Record<number, EventItem[]> = {};
+  for (const e of monthEvents) {
+    const day = new Date(e.startTime).getDate();
+    if (!eventsByDay[day]) eventsByDay[day] = [];
+    eventsByDay[day].push(e);
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -102,10 +186,6 @@ export default function EventsPage() {
           <h1 className="text-3xl font-bold text-white">Events & Calendar</h1>
           <p className="text-zinc-400 mt-1">Browse classes, workshops, and community events.</p>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-          <CalendarPlus className="h-4 w-4 mr-2" />
-          Add to Calendar
-        </Button>
       </div>
 
       {/* Calendar Controls */}
@@ -113,13 +193,13 @@ export default function EventsPage() {
         <CardContent className="pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800">
+              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={prevMonth}>
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <h2 className="text-lg font-semibold text-white min-w-[160px] text-center">
-                March 2026
+                {MONTHS[calMonth]} {calYear}
               </h2>
-              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800">
+              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={nextMonth}>
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
@@ -136,6 +216,37 @@ export default function EventsPage() {
                 >
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mini Calendar Grid */}
+          <div className="mt-4">
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="text-center text-xs text-zinc-500 py-1">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day, i) => (
+                <div
+                  key={i}
+                  className={`text-center py-2 rounded-lg text-sm ${
+                    day === null ? "" :
+                    day === now.getDate() && calMonth === now.getMonth() && calYear === now.getFullYear()
+                      ? "bg-orange-500 text-white font-bold"
+                      : eventsByDay[day]
+                        ? "bg-zinc-800 text-white font-medium"
+                        : "text-zinc-500"
+                  }`}
+                >
+                  {day || ""}
+                  {day && eventsByDay[day] && (
+                    <div className="flex justify-center mt-0.5">
+                      <div className="w-1 h-1 rounded-full bg-orange-400" />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -182,11 +293,54 @@ export default function EventsPage() {
         </div>
       )}
 
+      {/* My Bookings */}
+      {myBookings.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Ticket className="h-5 w-5 text-orange-500" />
+            My Bookings
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {myBookings.filter((b) => b.status !== "CANCELLED").map((booking) => (
+              <Card key={booking.id} className="bg-zinc-900 border-zinc-800">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-white">{booking.event.title}</p>
+                      <p className="text-xs text-zinc-400">{formatEventDate(booking.event.startTime)}</p>
+                      <Badge className={`mt-1 text-xs ${
+                        booking.status === "BOOKED" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                        booking.status === "ATTENDED" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                        "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                      }`}>
+                        {booking.status}
+                      </Badge>
+                    </div>
+                    {booking.qrCode && booking.status === "BOOKED" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                        onClick={() => setSelectedQR({ eventTitle: booking.event.title, qrCode: booking.qrCode! })}
+                      >
+                        <QrCode className="h-4 w-4 mr-1" />
+                        Check-in QR
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Event Cards */}
       {!loading && events.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {events.map((event) => {
             const spotsLeft = event.capacity - event._count.bookings;
+            const isBooked = myBookings.some((b) => b.eventId === event.id && b.status !== "CANCELLED");
             return (
               <Card key={event.id} className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition">
                 <CardHeader className="pb-3">
@@ -233,19 +387,78 @@ export default function EventsPage() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white mt-2"
-                    disabled={spotsLeft <= 0}
-                    onClick={() => handleRSVP(event.id)}
-                  >
-                    {spotsLeft > 0 ? "RSVP" : "Waitlist"}
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      className={`flex-1 ${isBooked ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600"} text-white`}
+                      disabled={isBooked || spotsLeft <= 0}
+                      onClick={() => handleRSVP(event.id)}
+                    >
+                      {isBooked ? "Booked" : spotsLeft > 0 ? "RSVP" : "Waitlist"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      onClick={() => generateICSFile(event)}
+                    >
+                      <CalendarPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
       )}
+
+      {/* QR Code Dialog */}
+      <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white text-center">Check-in QR Code</DialogTitle>
+          </DialogHeader>
+          {selectedQR && (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <p className="text-sm text-zinc-400 text-center">{selectedQR.eventTitle}</p>
+              <div className="bg-white p-6 rounded-xl">
+                <svg viewBox="0 0 200 200" className="w-48 h-48">
+                  {/* QR Code visual representation using the code as seed */}
+                  {(() => {
+                    const code = selectedQR.qrCode;
+                    const cells: JSX.Element[] = [];
+                    const size = 25;
+                    const cellSize = 200 / size;
+                    // Generate deterministic pattern from qrCode string
+                    for (let y = 0; y < size; y++) {
+                      for (let x = 0; x < size; x++) {
+                        const charCode = code.charCodeAt((y * size + x) % code.length);
+                        const isFinder = (x < 7 && y < 7) || (x >= size - 7 && y < 7) || (x < 7 && y >= size - 7);
+                        const isFinderInner = (x >= 2 && x <= 4 && y >= 2 && y <= 4) ||
+                          (x >= size - 5 && x <= size - 3 && y >= 2 && y <= 4) ||
+                          (x >= 2 && x <= 4 && y >= size - 5 && y <= size - 3);
+                        const isFinderBorder = isFinder && !isFinderInner &&
+                          ((x < 7 && y < 7 && (x === 0 || x === 6 || y === 0 || y === 6)) ||
+                          (x >= size - 7 && y < 7 && (x === size - 1 || x === size - 7 || y === 0 || y === 6)) ||
+                          (x < 7 && y >= size - 7 && (x === 0 || x === 6 || y === size - 1 || y === size - 7)));
+                        const filled = isFinderBorder || isFinderInner || (!isFinder && (charCode + x * 3 + y * 7) % 3 !== 0);
+                        if (filled) {
+                          cells.push(
+                            <rect key={`${x}-${y}`} x={x * cellSize} y={y * cellSize} width={cellSize} height={cellSize} fill="#000" />
+                          );
+                        }
+                      }
+                    }
+                    return cells;
+                  })()}
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-zinc-500 font-mono break-all px-4">{selectedQR.qrCode}</p>
+                <p className="text-xs text-zinc-500 mt-2">Show this code at the event entrance</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

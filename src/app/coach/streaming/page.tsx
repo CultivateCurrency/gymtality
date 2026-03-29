@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation } from "@/hooks/use-api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -85,9 +85,9 @@ function formatDateTime(dateStr: string | null): string {
 }
 
 export default function CoachStreamingPage() {
-  const { data: session } = useSession();
+  const { user } = useAuthStore();
   const { data: streams, loading, error, refetch } = useApi<Stream[]>(
-    session?.user?.id ? "/api/streaming" : null
+    user?.id ? "/api/streaming" : null
   );
 
   const { mutate: createStream, loading: creating } = useMutation<Stream, Record<string, unknown>>(
@@ -137,8 +137,8 @@ export default function CoachStreamingPage() {
   }, [pastStreams]);
 
   async function handleSchedule() {
-    if (!session?.user || !streamTitle || !streamDate || !streamTime) return;
-    const userId = (session.user as any).id;
+    if (!user || !streamTitle || !streamDate || !streamTime) return;
+    const userId = user.id;
     const scheduledAt = new Date(`${streamDate}T${streamTime}`).toISOString();
     const result = await createStream({
       hostId: userId,
@@ -161,9 +161,9 @@ export default function CoachStreamingPage() {
   }
 
   async function handleGoLive() {
-    if (!session?.user) return;
+    if (!user) return;
     const result = await createStream({
-      hostId: (session.user as any).id,
+      hostId: user.id,
       title: "Live Stream",
       category: null,
       price: 0,
