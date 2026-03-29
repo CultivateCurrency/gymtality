@@ -2,6 +2,19 @@
 
 import { useState } from "react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+function getToken(): string | null {
+  try {
+    const raw = localStorage.getItem("gymtality-auth");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface UploadResult {
   url: string;
   key: string;
@@ -40,8 +53,11 @@ export function useUpload(): UseUploadReturn {
 
       setProgress(30);
 
-      const res = await fetch("/api/upload", {
+      const token = getToken();
+      // Do NOT set Content-Type — let the browser set multipart/form-data with boundary
+      const res = await fetch(`${API_URL}/api/storage/upload`, {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 
@@ -54,7 +70,7 @@ export function useUpload(): UseUploadReturn {
       }
 
       setProgress(100);
-      return data.data;
+      return data.data as UploadResult;
     } catch (err: any) {
       const msg = err.message || "Upload failed";
       setError(msg);
