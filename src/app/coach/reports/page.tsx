@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { useApi, useMutation } from "@/hooks/use-api";
+import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import {
   Card,
   CardContent,
@@ -100,9 +100,8 @@ export default function CoachReportsPage() {
   };
 
   const handleUnblock = async (blockedId: string) => {
-    await fetch("/api/coach/reports", {
+    await apiFetch("/api/coach/reports", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "unblock", blockedId }),
     });
     refetch();

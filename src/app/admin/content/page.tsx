@@ -33,7 +33,7 @@ import {
   MessageSquare,
   Users,
 } from "lucide-react";
-import { useApi } from "@/hooks/use-api";
+import { useApi, apiFetch } from "@/hooks/use-api";
 import { useUpload } from "@/hooks/use-upload";
 
 // ---- Types ----
@@ -167,25 +167,25 @@ export default function AdminContentPage() {
   async function saveCat() {
     const payload = { name: catForm.name, description: catForm.description || null, icon: catForm.icon || null, order: catForm.order, parentId: catParentId };
     if (catEditing) {
-      await fetch(`/api/admin/categories/${catEditing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch(`/api/admin/categories/${catEditing.id}`, { method: "PUT", body: JSON.stringify(payload) });
     } else {
-      await fetch("/api/admin/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch("/api/admin/categories", { method: "POST", body: JSON.stringify(payload) });
     }
     setCatModal(false); setCatEditing(null); setCatParentId(null);
     refetchCats();
   }
 
   async function deleteCat(id: string) {
-    await fetch(`/api/admin/categories/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/admin/categories/${id}`, { method: "DELETE" });
     setCatDeleteConfirm(null);
     refetchCats();
   }
 
   // ---- Books ----
-  const { data: booksData, loading: booksLoading, refetch: refetchBooks } = useApi<{ success: boolean; data: Book[] }>(
+  const { data: booksData, loading: booksLoading, refetch: refetchBooks } = useApi<Book[]>(
     activeTab === "books" ? "/api/admin/books" : null
   );
-  const books = booksData?.data || [];
+  const books = booksData || [];
   const [bookModal, setBookModal] = useState(false);
   const [bookEditing, setBookEditing] = useState<Book | null>(null);
   const [bookForm, setBookForm] = useState({ title: "", author: "", language: "English", category: "", subcategory: "", coverImage: "", about: "" });
@@ -194,30 +194,30 @@ export default function AdminContentPage() {
   async function saveBook() {
     const payload = { ...bookForm, subcategory: bookForm.subcategory || null, coverImage: bookForm.coverImage || null, about: bookForm.about || null };
     if (bookEditing) {
-      await fetch(`/api/admin/books/${bookEditing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch(`/api/admin/books/${bookEditing.id}`, { method: "PUT", body: JSON.stringify(payload) });
     } else {
-      await fetch("/api/admin/books", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch("/api/admin/books", { method: "POST", body: JSON.stringify(payload) });
     }
     setBookModal(false); setBookEditing(null);
     refetchBooks();
   }
 
   async function deleteBook(id: string) {
-    await fetch(`/api/admin/books/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/admin/books/${id}`, { method: "DELETE" });
     setBookDeleteConfirm(null);
     refetchBooks();
   }
 
   // ---- Music ----
-  const { data: albumsData, loading: albumsLoading, refetch: refetchAlbums } = useApi<{ success: boolean; data: Album[] }>(
+  const { data: albumsData, loading: albumsLoading, refetch: refetchAlbums } = useApi<Album[]>(
     activeTab === "music" ? "/api/admin/music/albums" : null
   );
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
-  const { data: songsData, loading: songsLoading, refetch: refetchSongs } = useApi<{ success: boolean; data: Song[] }>(
+  const { data: songsData, loading: songsLoading, refetch: refetchSongs } = useApi<Song[]>(
     activeTab === "music" && selectedAlbumId ? `/api/admin/music/songs?albumId=${selectedAlbumId}` : null
   );
-  const albums = albumsData?.data || [];
-  const songs = songsData?.data || [];
+  const albums = albumsData || [];
+  const songs = songsData || [];
 
   const [albumModal, setAlbumModal] = useState(false);
   const [albumEditing, setAlbumEditing] = useState<Album | null>(null);
@@ -232,16 +232,16 @@ export default function AdminContentPage() {
   async function saveAlbum() {
     const payload = { ...albumForm, title: albumForm.title || null, subTitle: albumForm.subTitle || null, description: albumForm.description || null, coverImage: albumForm.coverImage || null, category: albumForm.category || null };
     if (albumEditing) {
-      await fetch(`/api/admin/music/albums/${albumEditing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch(`/api/admin/music/albums/${albumEditing.id}`, { method: "PUT", body: JSON.stringify(payload) });
     } else {
-      await fetch("/api/admin/music/albums", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch("/api/admin/music/albums", { method: "POST", body: JSON.stringify(payload) });
     }
     setAlbumModal(false); setAlbumEditing(null);
     refetchAlbums();
   }
 
   async function deleteAlbum(id: string) {
-    await fetch(`/api/admin/music/albums/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/admin/music/albums/${id}`, { method: "DELETE" });
     setAlbumDeleteConfirm(null);
     if (selectedAlbumId === id) setSelectedAlbumId(null);
     refetchAlbums();
@@ -250,28 +250,28 @@ export default function AdminContentPage() {
   async function saveSong() {
     const payload = { ...songForm, genre: songForm.genre || null, lyrics: songForm.lyrics || null, audioUrl: songForm.audioUrl || null };
     if (songEditing) {
-      await fetch(`/api/admin/music/songs/${songEditing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch(`/api/admin/music/songs/${songEditing.id}`, { method: "PUT", body: JSON.stringify(payload) });
     } else {
-      await fetch("/api/admin/music/songs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch("/api/admin/music/songs", { method: "POST", body: JSON.stringify(payload) });
     }
     setSongModal(false); setSongEditing(null);
     refetchSongs();
   }
 
   async function deleteSong(id: string) {
-    await fetch(`/api/admin/music/songs/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/admin/music/songs/${id}`, { method: "DELETE" });
     setSongDeleteConfirm(null);
     refetchSongs();
   }
 
   // ---- Community ----
-  const { data: communityData, loading: communityLoading, refetch: refetchCommunity } = useApi<{ success: boolean; data: { posts: Post[] } }>(
+  const { data: communityData, loading: communityLoading, refetch: refetchCommunity } = useApi<Post[]>(
     activeTab === "community" ? "/api/community/posts?limit=30" : null
   );
-  const posts = communityData?.data?.posts || [];
+  const posts = communityData || [];
 
   async function removePost(id: string) {
-    await fetch(`/api/admin/moderation`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reportId: id, status: "RESOLVED" }) });
+    await apiFetch(`/api/admin/moderation`, { method: "PUT", body: JSON.stringify({ reportId: id, status: "RESOLVED" }) });
     refetchCommunity();
   }
 

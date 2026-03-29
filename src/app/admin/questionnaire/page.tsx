@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useApi, useMutation } from '@/hooks/use-api'
+import { useApi, useMutation, apiFetch } from '@/hooks/use-api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -62,7 +62,7 @@ export default function QuestionnairePage() {
     }
 
     if (editing) {
-      await fetch(`/api/admin/questionnaire/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      await apiFetch(`/api/admin/questionnaire/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) })
     } else {
       await createMutation.mutate(payload)
     }
@@ -71,7 +71,7 @@ export default function QuestionnairePage() {
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/admin/questionnaire/${id}`, { method: 'DELETE' })
+    await apiFetch(`/api/admin/questionnaire/${id}`, { method: 'DELETE' })
     setDeleteConfirm(null)
     refetch()
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/hooks/use-api";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,9 +86,8 @@ export default function QuestionnairePage() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/users/questionnaire", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await apiFetch("/api/users/profile", {
+        method: "PATCH",
         body: JSON.stringify({
           age: parseInt(form.age),
           gender: form.gender,
@@ -103,10 +103,7 @@ export default function QuestionnairePage() {
           preferredDays: form.preferredDays,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
-        router.push("/member/dashboard");
-      }
+      router.push("/member/dashboard");
     } catch (error) {
       console.error("Questionnaire error:", error);
     } finally {

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/hooks/use-api";
+import { useAuthStore } from "@/store/auth-store";
 import {
   Card,
   CardContent,
@@ -28,8 +30,8 @@ interface UserProfile {
   email: string;
   profilePhoto: string | null;
   role: string;
-  bio?: string;
   createdAt: string;
+  profile: { bio: string | null } | null;
 }
 
 interface Post {
@@ -44,14 +46,15 @@ interface Post {
 
 interface WorkoutSession {
   id: string;
-  workoutPlan?: { title: string };
-  duration: number;
-  forgeScore: number;
+  plan?: { name: string };
+  duration: number | null;
+  forgeScore: number | null;
   createdAt: string;
 }
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user: authUser } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
@@ -59,46 +62,26 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authUser?.id) return;
     async function loadProfile() {
       try {
-        const [userRes, postsRes, workoutsRes, followRes] = await Promise.all([
-          fetch("/api/users/me"),
-          fetch("/api/community/posts?mine=true&limit=20"),
-          fetch("/api/workouts/sessions?limit=20"),
-          fetch("/api/users/me/stats"),
+        const [userData, postsData, workoutsData, userStatsData] = await Promise.allSettled([
+          apiFetch<UserProfile>("/api/users/profile"),
+          apiFetch<Post[]>("/api/community/posts?limit=20"),
+          apiFetch<WorkoutSession[]>("/api/workouts/sessions?limit=20"),
+          apiFetch<{ _count: { followers: number; following: number } }>(`/api/users/${authUser!.id}`),
         ]);
 
-        const userData = await userRes.json();
-        if (userData.success) {
-          setProfile(userData.data);
-        }
+        if (userData.status === "fulfilled") setProfile(userData.value);
+        if (postsData.status === "fulfilled") setPosts(postsData.value);
+        if (workoutsData.status === "fulfilled") setWorkouts(workoutsData.value);
 
-        const postsData = await postsRes.json();
-        if (postsData.success) {
-          setPosts(postsData.data || []);
-        }
-
-        const workoutsData = await workoutsRes.json();
-        if (workoutsData.success) {
-          setWorkouts(workoutsData.data || []);
-        }
-
-        const followData = await followRes.json();
-        if (followData.success) {
-          setStats({
-            posts: postsData.data?.length || 0,
-            followers: followData.data?.followers || 0,
-            following: followData.data?.following || 0,
-            workouts: workoutsData.data?.length || 0,
-          });
-        } else {
-          setStats({
-            posts: postsData.data?.length || 0,
-            followers: 0,
-            following: 0,
-            workouts: workoutsData.data?.length || 0,
-          });
-        }
+        setStats({
+          posts: postsData.status === "fulfilled" ? postsData.value.length : 0,
+          followers: userStatsData.status === "fulfilled" ? (userStatsData.value._count?.followers ?? 0) : 0,
+          following: userStatsData.status === "fulfilled" ? (userStatsData.value._count?.following ?? 0) : 0,
+          workouts: workoutsData.status === "fulfilled" ? workoutsData.value.length : 0,
+        });
       } catch (err) {
         console.error("Failed to load profile:", err);
       } finally {
@@ -106,7 +89,7 @@ export default function ProfilePage() {
       }
     }
     loadProfile();
-  }, []);
+  }, [authUser?.id]);
 
   function formatDate(dateStr: string): string {
     const date = new Date(dateStr);
@@ -176,8 +159,8 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               </div>
-              {profile.bio && (
-                <p className="text-zinc-300 text-sm leading-relaxed">{profile.bio}</p>
+              {profile.profile?.bio && (
+                <p className="text-zinc-300 text-sm leading-relaxed">{profile.profile.bio}</p>
               )}
               <p className="text-xs text-zinc-500">
                 Member since {new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
@@ -288,7 +271,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-white">
-                      {workout.workoutPlan?.title || "Workout Session"}
+                      {workout.plan?.name || "Workout Session"}
                     </h3>
                     <p className="text-sm text-zinc-400">
                       {workout.duration} min &middot; Forge Score: {workout.forgeScore}

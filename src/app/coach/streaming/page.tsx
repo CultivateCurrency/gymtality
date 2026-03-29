@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { useApi, useMutation } from "@/hooks/use-api";
+import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
   Card,
@@ -170,40 +170,30 @@ export default function CoachStreamingPage() {
     });
     if (result) {
       // Fetch the full stream details (with stream key)
-      const res = await fetch(`/api/streaming/${result.id}`);
-      const data = await res.json();
-      if (data.success) {
-        setActiveStream(data.data);
-        setShowStreamPanel(true);
-      }
+      const streamData = await apiFetch<Stream>(`/api/streaming/${result.id}`);
+      setActiveStream(streamData);
+      setShowStreamPanel(true);
       refetch();
     }
   }
 
   async function handleStartScheduledStream(stream: Stream) {
     // Fetch stream details with stream key (only available to host)
-    const res = await fetch(`/api/streaming/${stream.id}`);
-    const data = await res.json();
-    if (data.success) {
-      setActiveStream(data.data);
-      setShowStreamPanel(true);
-    }
+    const streamData = await apiFetch<Stream>(`/api/streaming/${stream.id}`);
+    setActiveStream(streamData);
+    setShowStreamPanel(true);
   }
 
   async function handleSetLive() {
     if (!activeStream) return;
     setGoingLive(true);
     try {
-      const res = await fetch(`/api/streaming/${activeStream.id}`, {
+      await apiFetch(`/api/streaming/${activeStream.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "LIVE" }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setActiveStream({ ...activeStream, status: "LIVE", startedAt: new Date().toISOString() });
-        refetch();
-      }
+      setActiveStream({ ...activeStream, status: "LIVE", startedAt: new Date().toISOString() });
+      refetch();
     } finally {
       setGoingLive(false);
     }
@@ -213,17 +203,13 @@ export default function CoachStreamingPage() {
     if (!activeStream) return;
     setEndingStream(true);
     try {
-      const res = await fetch(`/api/streaming/${activeStream.id}`, {
+      await apiFetch(`/api/streaming/${activeStream.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "ENDED" }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setShowStreamPanel(false);
-        setActiveStream(null);
-        refetch();
-      }
+      setShowStreamPanel(false);
+      setActiveStream(null);
+      refetch();
     } finally {
       setEndingStream(false);
     }

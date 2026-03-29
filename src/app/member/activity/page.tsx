@@ -24,7 +24,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useApi } from "@/hooks/use-api";
+import { useApi, apiFetch } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
 
 type ViewPeriod = "daily" | "weekly" | "monthly";
@@ -107,9 +107,8 @@ export default function ActivityPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetch("/api/wearables/sync", {
+      await apiFetch("/api/wearables/sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider: "GOOGLE_FIT", days: 7 }),
       });
       refetchWearable();
