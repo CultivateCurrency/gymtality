@@ -16,14 +16,11 @@ import {
   DollarSign,
   Users,
   Plus,
-  Edit3,
-  Trash2,
   Tag,
   CheckCircle2,
   Star,
   Clock,
   Percent,
-  Copy,
   Loader2,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
@@ -117,13 +114,6 @@ const PLAN_TIER_CONFIG = [
   },
 ];
 
-// Sample coupon data (no coupons API exists yet)
-const coupons = [
-  { id: 1, code: "GYMTALITY25", discount: "25% off", type: "Percentage", uses: 142, maxUses: 500, expiresAt: "2026-04-30", status: "Active" },
-  { id: 2, code: "NEWYEAR50", discount: "50% off first month", type: "Percentage", uses: 89, maxUses: 100, expiresAt: "2026-01-31", status: "Expired" },
-  { id: 3, code: "ELITE10", discount: "$10 off", type: "Fixed", uses: 23, maxUses: 200, expiresAt: "2026-06-30", status: "Active" },
-  { id: 4, code: "REFERRAL15", discount: "15% off", type: "Percentage", uses: 67, maxUses: null, expiresAt: null, status: "Active" },
-];
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -416,61 +406,10 @@ export default function AdminSubscriptionsPage() {
           </CardContent>
         )}
         <CardContent className={showCreateCoupon ? "pt-4" : ""}>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase">Code</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase">Discount</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase">Uses</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase">Expires</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase">Status</th>
-                  <th className="text-right py-3 px-4 text-xs font-medium text-zinc-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coupons.map((coupon) => (
-                  <tr key={coupon.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono text-orange-400">{coupon.code}</span>
-                        <button className="text-zinc-500 hover:text-zinc-300 transition">
-                          <Copy className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-zinc-300">{coupon.discount}</td>
-                    <td className="py-3 px-4 text-sm text-zinc-300">
-                      {coupon.uses}/{coupon.maxUses || "Unlimited"}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-zinc-400">
-                      {coupon.expiresAt || "Never"}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge
-                        className={
-                          coupon.status === "Active"
-                            ? "bg-green-500/20 text-green-400 border-green-500/30"
-                            : "bg-zinc-700 text-zinc-400 border-zinc-600"
-                        }
-                      >
-                        {coupon.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white">
-                          <Edit3 className="h-3 w-3" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-400 hover:bg-red-500/10 hover:text-red-400">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Percent className="h-10 w-10 text-zinc-600 mb-3" />
+            <p className="text-zinc-400 text-sm font-medium">No coupons yet</p>
+            <p className="text-zinc-600 text-xs mt-1">Create your first discount code using the button above.</p>
           </div>
         </CardContent>
       </Card>
