@@ -24,7 +24,7 @@ import {
   ArrowUpRight,
   Loader2,
 } from "lucide-react";
-import { useApi } from "@/hooks/use-api";
+import { useApi, apiFetch } from "@/hooks/use-api";
 
 interface Product {
   id: string;
@@ -118,9 +118,9 @@ export default function AdminCommercePage() {
       imageUrl: productForm.imageUrl || null,
     };
     if (productEditing) {
-      await fetch(`/api/shop/products/${productEditing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch(`/api/shop/products/${productEditing.id}`, { method: "PATCH", body: JSON.stringify(payload) });
     } else {
-      await fetch("/api/shop/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      await apiFetch("/api/shop/products", { method: "POST", body: JSON.stringify(payload) });
     }
     setProductSaving(false);
     setProductModal(false);
@@ -129,7 +129,7 @@ export default function AdminCommercePage() {
   }
 
   async function deleteProduct(id: string) {
-    await fetch(`/api/shop/products/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/shop/products/${id}`, { method: "DELETE" });
     setProductDeleteConfirm(null);
     refetchProducts();
   }

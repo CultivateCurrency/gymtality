@@ -19,6 +19,7 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
+import { apiFetch } from "@/hooks/use-api";
 
 export default function SupportPage() {
   const [name, setName] = useState("");
@@ -33,14 +34,21 @@ export default function SupportPage() {
     if (!name || !email || !subject || !message) return;
 
     setSending(true);
-    // Simulate sending — will wire to SES later
-    await new Promise((r) => setTimeout(r, 1000));
-    setSending(false);
-    setSent(true);
-    setName("");
-    setEmail("");
-    setSubject("");
-    setMessage("");
+    try {
+      await apiFetch("/api/support", {
+        method: "POST",
+        body: JSON.stringify({ subject, message, name, email }),
+      });
+      setSent(true);
+      setName("");
+      setEmail("");
+      setSubject("");
+      setMessage("");
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

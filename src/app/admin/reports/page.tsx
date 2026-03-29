@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useApi, useMutation } from '@/hooks/use-api'
+import { useApi, useMutation, apiFetch } from '@/hooks/use-api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,22 +46,21 @@ export default function AdminReportsPage() {
   async function searchSubscription() {
     if (!subEmail) return
     setSubSearchLoading(true)
-    const res = await fetch(`/api/admin/users?search=${encodeURIComponent(subEmail)}`)
-    const json = await res.json()
-    const user = json?.data?.users?.[0]
-    if (user?.subscription) {
-      setSubResult(user.subscription)
-    } else {
+    try {
+      const data = await apiFetch<{ users: { subscription?: { id: string; plan: string } }[] }>(`/api/admin/users?search=${encodeURIComponent(subEmail)}`)
+      const user = (data as any)?.users?.[0] ?? (data as any)?.[0]
+      setSubResult(user?.subscription ?? null)
+    } catch {
       setSubResult(null)
+    } finally {
+      setSubSearchLoading(false)
     }
-    setSubSearchLoading(false)
   }
 
   async function updatePlan() {
     if (!subResult || !newPlan) return
-    await fetch(`/api/admin/subscriptions`, {
+    await apiFetch(`/api/admin/subscriptions`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subscriptionId: subResult.id, plan: newPlan }),
     })
     setSubResult({ ...subResult, plan: newPlan })

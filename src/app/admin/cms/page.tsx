@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useApi } from '@/hooks/use-api'
+import { useApi, apiFetch } from '@/hooks/use-api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RichTextEditor } from '@/components/rich-text-editor'
@@ -39,15 +39,17 @@ export default function AdminCMSPage() {
 
   async function handleSave(key: string) {
     setSaving(key)
-    await fetch('/api/admin/cms', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, content: contents[key] || '' }),
-    })
-    setSaving(null)
-    setSaved(key)
-    setTimeout(() => setSaved(null), 2000)
-    refetch()
+    try {
+      await apiFetch('/api/admin/cms', {
+        method: 'PUT',
+        body: JSON.stringify({ key, content: contents[key] || '' }),
+      })
+      setSaved(key)
+      setTimeout(() => setSaved(null), 2000)
+      refetch()
+    } finally {
+      setSaving(null)
+    }
   }
 
   function formatDate(iso: string) {

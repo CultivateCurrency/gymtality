@@ -134,8 +134,8 @@ export default function CoachSettingsPage() {
     if (!userId) return;
     setSaving(true);
     try {
-      await apiFetch(`/api/users/${userId}`, {
-        method: "PUT",
+      await apiFetch("/api/users/me", {
+        method: "PATCH",
         body: JSON.stringify({ fullName, profilePhoto }),
       });
       toast.success("Profile saved successfully");
@@ -279,7 +279,7 @@ export default function CoachSettingsPage() {
                       if (newPassword.length < 6) { setPasswordError("Password must be at least 6 characters"); return; }
                       setChangingPassword(true);
                       try {
-                        await apiFetch("/api/users/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
+                        await apiFetch("/api/users/settings/password", { method: "PATCH", body: JSON.stringify({ currentPassword, newPassword }) });
                         setPasswordSuccess(true);
                         setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
                       } catch (err: any) {

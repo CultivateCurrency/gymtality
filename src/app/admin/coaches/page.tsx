@@ -29,7 +29,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useApi, useMutation } from "@/hooks/use-api";
+import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 
 interface CoachUser {
   id: string;
@@ -123,11 +123,14 @@ export default function AdminCoachesPage() {
 
   async function handleDelete(coach: CoachProfile) {
     setDeleteLoading(true);
-    await fetch(`/api/admin/users/${coach.userId}`, { method: 'DELETE' });
-    setDeleteLoading(false);
-    setDeleteConfirm(null);
-    refetchApproved();
-    refetchPending();
+    try {
+      await apiFetch(`/api/admin/users/${coach.userId}`, { method: 'DELETE' });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteConfirm(null);
+      refetchApproved();
+      refetchPending();
+    }
   }
 
   return (

@@ -22,6 +22,7 @@ import {
   Clock,
   Percent,
   Loader2,
+  Edit3,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
 

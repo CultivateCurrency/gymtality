@@ -178,8 +178,8 @@ function SettingsContent() {
   const saveProfile = useCallback(async () => {
     if (!userData?.id) return;
     try {
-      await apiFetch(`/api/users/${userData.id}`, {
-        method: "PUT",
+      await apiFetch("/api/users/me", {
+        method: "PATCH",
         body: JSON.stringify({ fullName, username, email, profilePhoto }),
       });
       toast.success("Profile auto-saved");
@@ -192,16 +192,14 @@ function SettingsContent() {
 
   // Load blocked users
   useEffect(() => {
-    fetch("/api/users/me/blocked")
-      .then((r) => r.json())
+    apiFetch<{ success: boolean; data: { id: string; fullName: string; username: string; profilePhoto: string | null }[] }>("/api/users/me/blocked")
       .then((d) => { if (d.success) setBlockedUsers(d.data || []); })
       .catch(() => {});
   }, []);
 
   // Load wearable connections
   const loadWearables = useCallback(() => {
-    fetch("/api/wearables")
-      .then((r) => r.json())
+    apiFetch<{ success: boolean; data: unknown[] }>("/api/wearables")
       .then((d) => { if (d.success) setWearableConnections(d.data || []); })
       .catch(() => {});
   }, []);
@@ -210,12 +208,11 @@ function SettingsContent() {
 
   // Load notification preferences
   useEffect(() => {
-    fetch("/api/notifications/preferences")
-      .then((r) => r.json())
+    apiFetch<{ success: boolean; data: Record<string, unknown> }>("/api/users/notifications/preferences")
       .then((d) => {
         if (d.success && d.data) {
-          const { id, userId, ...prefs } = d.data;
-          setNotifPrefs(prefs);
+          const { id, userId, ...prefs } = d.data as { id: unknown; userId: unknown; [key: string]: unknown };
+          setNotifPrefs(prefs as Record<string, boolean>);
         }
       })
       .catch(() => {})
@@ -227,8 +224,8 @@ function SettingsContent() {
     setNotifPrefs(updated);
     setNotifSaving(true);
     try {
-      await apiFetch("/api/notifications/preferences", {
-        method: "PUT",
+      await apiFetch("/api/users/notifications/preferences", {
+        method: "PATCH",
         body: JSON.stringify({ [key]: value }),
       });
     } catch {
@@ -507,7 +504,7 @@ function SettingsContent() {
                       if (newPassword.length < 6) { setPasswordError("Password must be at least 6 characters"); return; }
                       setChangingPassword(true);
                       try {
-                        await apiFetch("/api/users/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
+                        await apiFetch("/api/users/settings/password", { method: "PATCH", body: JSON.stringify({ currentPassword, newPassword }) });
                         setPasswordSuccess(true);
                         setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
                       } catch (err: any) {
@@ -530,8 +527,8 @@ function SettingsContent() {
               setSaving(true);
               setSaveSuccess(false);
               try {
-                await apiFetch(`/api/users/${userData?.id}`, {
-                  method: "PUT",
+                await apiFetch("/api/users/me", {
+                  method: "PATCH",
                   body: JSON.stringify({ fullName, username, email, profilePhoto }),
                 });
                 setSaveSuccess(true);

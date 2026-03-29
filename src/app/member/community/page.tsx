@@ -168,11 +168,8 @@ export default function CommunityPage() {
     setExpandedComments(postId);
     setLoadingComments(postId);
     try {
-      const res = await fetch(`/api/community/posts/${postId}/comments`);
-      const data = await res.json();
-      if (data.success) {
-        setComments((prev) => ({ ...prev, [postId]: data.data || [] }));
-      }
+      const data = await apiFetch<{ id: string; text: string; userId: string; createdAt: string }[]>(`/api/community/posts/${postId}/comments`);
+      setComments((prev) => ({ ...prev, [postId]: data || [] }));
     } catch {}
     setLoadingComments(null);
   };
@@ -186,12 +183,8 @@ export default function CommunityPage() {
         body: JSON.stringify({ text: commentText }),
       });
       setCommentText("");
-      // Reload comments
-      const res = await fetch(`/api/community/posts/${postId}/comments`);
-      const data = await res.json();
-      if (data.success) {
-        setComments((prev) => ({ ...prev, [postId]: data.data || [] }));
-      }
+      const data = await apiFetch<{ id: string; text: string; userId: string; createdAt: string }[]>(`/api/community/posts/${postId}/comments`);
+      setComments((prev) => ({ ...prev, [postId]: data || [] }));
       refetchPosts();
     } catch {}
     setPostingComment(false);

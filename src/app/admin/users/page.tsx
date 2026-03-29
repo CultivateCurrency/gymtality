@@ -24,7 +24,7 @@ import {
   ShieldOff,
   Shield,
 } from "lucide-react";
-import { useApi } from "@/hooks/use-api";
+import { useApi, apiFetch } from "@/hooks/use-api";
 
 interface AdminUser {
   id: string;
@@ -98,22 +98,27 @@ export default function AdminUsersPage() {
 
   async function handleDelete(user: AdminUser) {
     setActionLoading(user.id);
-    await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
-    setDeleteConfirm(null);
-    setActionLoading(null);
-    refetch();
+    try {
+      await apiFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+    } finally {
+      setDeleteConfirm(null);
+      setActionLoading(null);
+      refetch();
+    }
   }
 
   async function handleBlockToggle(user: AdminUser) {
     setActionLoading(user.id);
-    await fetch(`/api/admin/users/${user.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: user.isBlocked ? 'unblock' : 'block' }),
-    });
-    setBlockConfirm(null);
-    setActionLoading(null);
-    refetch();
+    try {
+      await apiFetch(`/api/admin/users/${user.id}/block`, {
+        method: 'PATCH',
+        body: JSON.stringify({ blocked: !user.isBlocked }),
+      });
+    } finally {
+      setBlockConfirm(null);
+      setActionLoading(null);
+      refetch();
+    }
   }
 
   return (

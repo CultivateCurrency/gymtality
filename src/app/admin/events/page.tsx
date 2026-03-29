@@ -49,15 +49,7 @@ interface EventData {
   _count: { bookings: number };
 }
 
-interface EventsResponse {
-  events: EventData[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+type EventsResponse = EventData[];
 
 interface CreateEventBody {
   title: string;
@@ -171,7 +163,7 @@ export default function AdminEventsPage() {
   // ---------------------------------------------------------------------------
 
   const url = useMemo(() => {
-    const p = new URLSearchParams({ limit: "50" });
+    const p = new URLSearchParams({ limit: "50", all: "true" });
     return `/api/events?${p}`;
   }, []);
 
@@ -186,7 +178,7 @@ export default function AdminEventsPage() {
   // Derived data
   // ---------------------------------------------------------------------------
 
-  const allEvents = useMemo(() => data?.events ?? [], [data]);
+  const allEvents = useMemo(() => data ?? [], [data]);
 
   const mappedEvents = useMemo(
     () =>
