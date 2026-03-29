@@ -63,6 +63,7 @@ interface AnalyticsData {
   pendingReports: number;
   monthlyRevenue: { month: string; revenue: number }[];
   dailyActivity: { day: string; users: number }[];
+  classAttendance: { week: string; attended: number }[];
 }
 
 function getInitials(fullName: string): string {
@@ -324,7 +325,7 @@ export default function AdminAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-32">
-              <SmallBarChart data={[{ week: "W1", attended: 18 }, { week: "W2", attended: 24 }, { week: "W3", attended: 21 }, { week: "W4", attended: 30 }]} dataKey="attended" />
+              <SmallBarChart data={data.classAttendance} dataKey="attended" />
             </div>
           </CardContent>
         </Card>
@@ -361,7 +362,7 @@ export default function AdminAnalyticsPage() {
               </div>
             </div>
             <div className="h-32">
-              <SmallLineChart data={[{ week: "W1", engagement: 340 }, { week: "W2", engagement: 520 }, { week: "W3", engagement: 480 }, { week: "W4", engagement: 610 }]} dataKey="engagement" lineColor="#a855f7" />
+              <SmallLineChart data={data.classAttendance.map((w) => ({ week: w.week, engagement: w.attended }))} dataKey="engagement" lineColor="#a855f7" />
             </div>
           </CardContent>
         </Card>
