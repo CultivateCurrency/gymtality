@@ -38,7 +38,7 @@ export function RevenueAreaChart({ data, id = "revGrad" }: { data: { month: stri
         </defs>
         <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} />
         <YAxis tick={axisTick} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`$${v}`, "Revenue"]} />
+        <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`$${v}`, "Revenue"]} />
         <Area type="monotone" dataKey="revenue" stroke="#22c55e" fill={`url(#${id})`} strokeWidth={2} />
       </AreaChart>
     </ResponsiveContainer>
@@ -85,7 +85,7 @@ export function EarningsBarChart({ data }: { data: { month: string; sessions: nu
       <BarChart data={data}>
         <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} />
         <YAxis tick={axisTick} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `$${v}`} />
+        <Tooltip contentStyle={tooltipStyle} formatter={(v) => `$${v}`} />
         <Legend wrapperStyle={{ color: "#a1a1aa", fontSize: 12 }} />
         <Bar dataKey="sessions" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Sessions" />
         <Bar dataKey="classes" fill="#a855f7" radius={[4, 4, 0, 0]} name="Classes" />

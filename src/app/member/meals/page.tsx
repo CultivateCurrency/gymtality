@@ -118,7 +118,7 @@ export default function MealsPage() {
           <p className="text-zinc-400 mt-1">Plan your nutrition and track macros.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
+          <DialogTrigger>
             <Button className="bg-orange-500 hover:bg-orange-600 text-white">
               <Plus className="h-4 w-4 mr-2" />
               New Plan

@@ -182,7 +182,7 @@ export default function QuestionnairePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Question Type</Label>
-                <Select value={form.type} onValueChange={v => setForm({ ...form, type: v })}>
+                <Select value={String(form.type || 'TEXT')} onValueChange={v => setForm({ ...form, type: v ?? form.type })}>
                   <SelectTrigger className="bg-gray-700 border-gray-600 text-white mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -195,7 +195,7 @@ export default function QuestionnairePage() {
               </div>
               <div>
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                <Select value={String(form.category || 'GENERAL')} onValueChange={v => setForm({ ...form, category: v ?? form.category })}>
                   <SelectTrigger className="bg-gray-700 border-gray-600 text-white mt-1">
                     <SelectValue />
                   </SelectTrigger>

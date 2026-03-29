@@ -627,7 +627,7 @@ export default function AdminContentPage() {
                 {selectedAlbumId && (
                   <Button
                     size="sm"
-                    onClick={() => { setSongEditing(null); setSongForm({ albumId: selectedAlbumId, name: "", artist: "", genre: "", lyrics: "", duration: 0, audioUrl: "" }); setSongModal(true); }}
+                    onClick={() => { setSongEditing(null); setSongForm({ albumId: selectedAlbumId ?? "", name: "", artist: "", genre: "", lyrics: "", duration: 0, audioUrl: "" }); setSongModal(true); }}
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                   >
                     <Plus className="h-3 w-3 mr-1" /> Add Song
@@ -849,7 +849,7 @@ export default function AdminContentPage() {
                 <div className="flex gap-2 mt-1">
                   <Input className="bg-zinc-800 border-zinc-700 text-white flex-1" value={bookForm.coverImage} onChange={e => setBookForm({ ...bookForm, coverImage: e.target.value })} placeholder="URL or upload..." />
                   <label className="shrink-0">
-                    <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer" asChild>
+                    <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer">
                       <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
                     </Button>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const r = await uploadFile(f, "book-covers", "image"); setBookForm(prev => ({ ...prev, coverImage: r.url })); } catch {} } }} />
@@ -912,7 +912,7 @@ export default function AdminContentPage() {
                 <div className="flex gap-2 mt-1">
                   <Input className="bg-zinc-800 border-zinc-700 text-white flex-1" value={albumForm.coverImage} onChange={e => setAlbumForm({ ...albumForm, coverImage: e.target.value })} placeholder="URL or upload..." />
                   <label className="shrink-0">
-                    <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer" asChild>
+                    <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer">
                       <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
                     </Button>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const r = await uploadFile(f, "album-covers", "image"); setAlbumForm(prev => ({ ...prev, coverImage: r.url })); } catch {} } }} />
@@ -951,7 +951,7 @@ export default function AdminContentPage() {
           <div className="space-y-4">
             <div>
               <Label>Album</Label>
-              <Select value={songForm.albumId} onValueChange={v => setSongForm({ ...songForm, albumId: v })}>
+              <Select value={songForm.albumId ?? ''} onValueChange={v => setSongForm({ ...songForm, albumId: v ?? songForm.albumId })}>
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1">
                   <SelectValue placeholder="Select album..." />
                 </SelectTrigger>
@@ -983,7 +983,7 @@ export default function AdminContentPage() {
               <div className="flex gap-2 mt-1">
                 <Input className="bg-zinc-800 border-zinc-700 text-white flex-1" value={songForm.audioUrl} onChange={e => setSongForm({ ...songForm, audioUrl: e.target.value })} placeholder="URL or upload..." />
                 <label className="shrink-0">
-                  <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer" asChild>
+                  <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer">
                     <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
                   </Button>
                   <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const r = await uploadFile(f, "songs", "audio"); setSongForm(prev => ({ ...prev, audioUrl: r.url })); } catch {} } }} />

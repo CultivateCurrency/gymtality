@@ -199,7 +199,7 @@ function SettingsContent() {
 
   // Load wearable connections
   const loadWearables = useCallback(() => {
-    apiFetch<{ success: boolean; data: unknown[] }>("/api/wearables")
+    apiFetch<{ success: boolean; data: { id: string; provider: string; connected: boolean; lastSyncedAt: string | null }[] }>("/api/wearables")
       .then((d) => { if (d.success) setWearableConnections(d.data || []); })
       .catch(() => {});
   }, []);

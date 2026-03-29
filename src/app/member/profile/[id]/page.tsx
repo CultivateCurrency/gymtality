@@ -76,7 +76,7 @@ export default function ViewProfilePage({
   const [requestSending, setRequestSending] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
 
-  const user = data?.user;
+  const profileUser = data?.user;
   const isFollowing = data?.isFollowing ?? false;
   const isOwnProfile = currentUserId === id;
 
@@ -119,7 +119,7 @@ export default function ViewProfilePage({
     );
   }
 
-  if (!user) {
+  if (!profileUser) {
     return (
       <div className="text-center py-20">
         <User className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
@@ -135,36 +135,36 @@ export default function ViewProfilePage({
         <CardContent className="pt-8 pb-6">
           <div className="flex flex-col items-center text-center">
             <Avatar className="h-24 w-24 mb-4">
-              {user.profilePhoto ? (
+              {profileUser.profilePhoto ? (
                 <img
-                  src={user.profilePhoto}
-                  alt={user.fullName}
+                  src={profileUser.profilePhoto}
+                  alt={profileUser.fullName}
                   className="h-full w-full object-cover rounded-full"
                 />
               ) : (
                 <AvatarFallback className="bg-orange-500/20 text-orange-500 text-2xl">
-                  {user.fullName.charAt(0)}
+                  {profileUser.fullName.charAt(0)}
                 </AvatarFallback>
               )}
             </Avatar>
 
-            <h1 className="text-2xl font-bold text-white">{user.fullName}</h1>
-            <p className="text-zinc-400 text-sm">@{user.username}</p>
+            <h1 className="text-2xl font-bold text-white">{profileUser.fullName}</h1>
+            <p className="text-zinc-400 text-sm">@{profileUser.username}</p>
 
-            {user.profile?.bio && (
+            {profileUser.profile?.bio && (
               <p className="text-zinc-300 text-sm mt-3 max-w-md">
-                {user.profile.bio}
+                {profileUser.profile.bio}
               </p>
             )}
 
             {/* Stats */}
             <div className="grid grid-cols-5 gap-6 mt-6">
               {[
-                { label: "Posts", value: user._count.posts },
-                { label: "Followers", value: user._count.followers },
-                { label: "Following", value: user._count.following },
-                { label: "Plans", value: user._count.workoutPlans },
-                { label: "Workouts", value: user._count.workoutSessions },
+                { label: "Posts", value: profileUser._count.posts },
+                { label: "Followers", value: profileUser._count.followers },
+                { label: "Following", value: profileUser._count.following },
+                { label: "Plans", value: profileUser._count.workoutPlans },
+                { label: "Workouts", value: profileUser._count.workoutSessions },
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
                   <p className="text-xl font-bold text-white">{stat.value}</p>
@@ -224,7 +224,7 @@ export default function ViewProfilePage({
           <CardContent className="pt-4 flex items-center gap-3">
             <FileText className="h-5 w-5 text-blue-500" />
             <div>
-              <p className="text-white font-medium">{user._count.posts}</p>
+              <p className="text-white font-medium">{profileUser._count.posts}</p>
               <p className="text-xs text-zinc-500">Posts Posted</p>
             </div>
           </CardContent>
@@ -233,7 +233,7 @@ export default function ViewProfilePage({
           <CardContent className="pt-4 flex items-center gap-3">
             <Dumbbell className="h-5 w-5 text-orange-500" />
             <div>
-              <p className="text-white font-medium">{user._count.workoutPlans}</p>
+              <p className="text-white font-medium">{profileUser._count.workoutPlans}</p>
               <p className="text-xs text-zinc-500">Plans Accepted</p>
             </div>
           </CardContent>
@@ -242,7 +242,7 @@ export default function ViewProfilePage({
           <CardContent className="pt-4 flex items-center gap-3">
             <Heart className="h-5 w-5 text-red-500" />
             <div>
-              <p className="text-white font-medium">{user._count.workoutSessions}</p>
+              <p className="text-white font-medium">{profileUser._count.workoutSessions}</p>
               <p className="text-xs text-zinc-500">Workouts Done</p>
             </div>
           </CardContent>
@@ -254,7 +254,7 @@ export default function ViewProfilePage({
         <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
             <DialogTitle className="text-white">
-              Workout Together with {user.fullName}
+              Workout Together with {profileUser.fullName}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

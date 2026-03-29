@@ -168,7 +168,7 @@ export default function CommunityPage() {
     setExpandedComments(postId);
     setLoadingComments(postId);
     try {
-      const data = await apiFetch<{ id: string; text: string; userId: string; createdAt: string }[]>(`/api/community/posts/${postId}/comments`);
+      const data = await apiFetch<Comment[]>(`/api/community/posts/${postId}/comments`);
       setComments((prev) => ({ ...prev, [postId]: data || [] }));
     } catch {}
     setLoadingComments(null);
@@ -183,7 +183,7 @@ export default function CommunityPage() {
         body: JSON.stringify({ text: commentText }),
       });
       setCommentText("");
-      const data = await apiFetch<{ id: string; text: string; userId: string; createdAt: string }[]>(`/api/community/posts/${postId}/comments`);
+      const data = await apiFetch<Comment[]>(`/api/community/posts/${postId}/comments`);
       setComments((prev) => ({ ...prev, [postId]: data || [] }));
       refetchPosts();
     } catch {}
@@ -480,8 +480,8 @@ export default function CommunityPage() {
 
         <TabsContent value="groups" className="space-y-4 mt-4">
           <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white mb-4">
+            <DialogTrigger className="mb-4">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Group
               </Button>
