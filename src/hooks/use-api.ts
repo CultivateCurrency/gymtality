@@ -16,6 +16,11 @@ function getToken(): string | null {
   }
 }
 
+interface ApiResponse<T> {
+  data: T;
+  meta?: Record<string, unknown>;
+}
+
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
   const token = getToken();
@@ -43,8 +48,35 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   return json.data as T;
 }
 
+async function apiFetchWithMeta<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
+  const token = getToken();
+
+  const res = await fetch(fullUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
+    ...options,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem("gymtality-auth");
+    document.cookie = "gymtality_auth=; path=/; max-age=0";
+    document.cookie = "gymtality_role=; path=/; max-age=0";
+    window.location.href = "/login";
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || "Request failed");
+  return { data: json.data as T, meta: json.meta };
+}
+
 export function useApi<T>(url: string | null) {
   const [data, setData] = useState<T | null>(null);
+  const [meta, setMeta] = useState<Record<string, unknown> | undefined>(undefined);
   const [loading, setLoading] = useState(!!url);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,8 +84,8 @@ export function useApi<T>(url: string | null) {
     if (!url) return;
     setLoading(true);
     setError(null);
-    apiFetch<T>(url)
-      .then(setData)
+    apiFetchWithMeta<T>(url)
+      .then(({ data: d, meta: m }) => { setData(d); setMeta(m); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [url]);
@@ -62,7 +94,7 @@ export function useApi<T>(url: string | null) {
     refetch();
   }, [refetch]);
 
-  return { data, loading, error, refetch };
+  return { data, meta, loading, error, refetch };
 }
 
 export function useMutation<T, B = unknown>(url: string, method: "POST" | "PUT" | "PATCH" | "DELETE" = "POST") {

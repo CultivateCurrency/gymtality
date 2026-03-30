@@ -46,14 +46,11 @@ interface AdminUser {
   };
 }
 
-interface UsersResponse {
-  users: AdminUser[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+interface Meta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 const roleFilters = ["All", "Member", "Coach", "Admin"];
@@ -89,10 +86,10 @@ export default function AdminUsersPage() {
     return `/api/admin/users?${params}`;
   }, [searchQuery, roleFilter]);
 
-  const { data, loading, error, refetch } = useApi<UsersResponse>(url);
+  const { data, meta, loading, error, refetch } = useApi<AdminUser[]>(url);
 
-  const users = data?.users ?? [];
-  const totalUsers = data?.pagination.total ?? 0;
+  const users = data ?? [];
+  const totalUsers = (meta as Meta | undefined)?.total ?? users.length;
   const totalVerified = users.filter((u) => u.emailVerified).length;
   const totalBlocked = users.filter((u) => u.isBlocked).length;
 
