@@ -30,6 +30,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 interface ReferralStats {
   totalInvites: number;
@@ -77,7 +78,10 @@ export default function ReferralsPage() {
       setCampaignName("");
       setDialogOpen(false);
       refetch();
-    } catch {}
+      toast.success("Referral link created");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create referral link");
+    }
   };
 
   return (

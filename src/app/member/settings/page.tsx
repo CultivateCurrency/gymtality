@@ -252,7 +252,9 @@ function SettingsContent() {
     try {
       await apiFetch(`/api/users/${blockedId}/block`, { method: "DELETE" });
       setBlockedUsers((prev) => prev.filter((u) => u.id !== blockedId));
-    } catch { /* ignore */ } finally {
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to unblock user");
+    } finally {
       setUnblocking(null);
     }
   };

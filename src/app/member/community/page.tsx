@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -30,10 +30,13 @@ import {
   Loader2,
   Send,
   X,
+  UserPlus,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
+import { useUpload } from "@/hooks/use-upload";
 import { toast } from "sonner";
+import Link from "next/link";
 
 function timeAgo(date: string) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -81,9 +84,20 @@ interface GroupsResponse {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
+interface SearchUser {
+  id: string;
+  fullName: string;
+  username: string;
+  profilePhoto: string | null;
+  role: string;
+}
+
 export default function CommunityPage() {
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostCaption, setNewPostCaption] = useState("");
+  const [newPostMediaUrl, setNewPostMediaUrl] = useState<string | null>(null);
+  const [newPostMediaType, setNewPostMediaType] = useState<"IMAGE" | "VIDEO" | null>(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -100,8 +114,15 @@ export default function CommunityPage() {
   const { user } = useAuthStore();
   const userId = user?.id;
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const { upload } = useUpload();
+
   const { data: postsData, loading: postsLoading, refetch: refetchPosts } = useApi<PostsResponse>("/api/community/posts?page=1&limit=20");
   const { data: groupsData, loading: groupsLoading, refetch: refetchGroups } = useApi<GroupsResponse>("/api/community/groups?page=1&limit=20");
+  const { data: searchResults } = useApi<SearchUser[]>(
+    discoverSearch.length >= 2 ? `/api/users/search?q=${encodeURIComponent(discoverSearch)}&limit=20` : null
+  );
 
   const allPosts = postsData?.posts ?? [];
   const posts = searchQuery
@@ -113,51 +134,73 @@ export default function CommunityPage() {
     : allPosts;
   const groups = groupsData?.groups ?? [];
 
+  const handleMediaUpload = async (file: File, type: "IMAGE" | "VIDEO") => {
+    setUploadingMedia(true);
+    try {
+      const result = await upload(file, "posts", type === "IMAGE" ? "image" : "video");
+      setNewPostMediaUrl(result.url);
+      setNewPostMediaType(type);
+      toast.success(`${type === "IMAGE" ? "Photo" : "Video"} uploaded`);
+    } catch {
+      toast.error("Failed to upload media");
+    }
+    setUploadingMedia(false);
+  };
+
   const handlePublish = async () => {
     if (!newPostCaption.trim()) return;
     try {
       await apiFetch("/api/community/posts", {
         method: "POST",
-        body: JSON.stringify({ title: newPostTitle || null, caption: newPostCaption }),
+        body: JSON.stringify({
+          title: newPostTitle || null,
+          caption: newPostCaption,
+          mediaUrl: newPostMediaUrl || null,
+          mediaType: newPostMediaType || null,
+        }),
       });
       setNewPostTitle("");
       setNewPostCaption("");
+      setNewPostMediaUrl(null);
+      setNewPostMediaType(null);
       setDialogOpen(false);
       refetchPosts();
-    } catch {}
+      toast.success("Post published!");
+    } catch {
+      toast.error("Failed to publish post");
+    }
   };
 
   const handleLike = async (postId: string) => {
     if (!userId) return;
     try {
-      await apiFetch(`/api/community/posts/${postId}/like`, {
-        method: "POST",
-        body: JSON.stringify({ userId }),
-      });
+      await apiFetch(`/api/community/posts/${postId}/like`, { method: "POST" });
       refetchPosts();
-    } catch {}
+    } catch {
+      toast.error("Failed to like post");
+    }
   };
 
   const handleSave = async (postId: string) => {
     if (!userId) return;
     try {
-      await apiFetch(`/api/community/posts/${postId}/save`, {
-        method: "POST",
-        body: JSON.stringify({ userId }),
-      });
+      await apiFetch(`/api/community/posts/${postId}/save`, { method: "POST" });
       refetchPosts();
-    } catch {}
+      toast.success("Post saved");
+    } catch {
+      toast.error("Failed to save post");
+    }
   };
 
   const handleJoinGroup = async (groupId: string) => {
     if (!userId) return;
     try {
-      await apiFetch(`/api/community/groups/${groupId}`, {
-        method: "POST",
-        body: JSON.stringify({ userId }),
-      });
+      await apiFetch(`/api/community/groups/${groupId}/join`, { method: "POST" });
       refetchGroups();
-    } catch {}
+      toast.success("Joined group!");
+    } catch {
+      toast.error("Failed to join group");
+    }
   };
 
   const loadComments = async (postId: string) => {
@@ -186,7 +229,9 @@ export default function CommunityPage() {
       const data = await apiFetch<Comment[]>(`/api/community/posts/${postId}/comments`);
       setComments((prev) => ({ ...prev, [postId]: data || [] }));
       refetchPosts();
-    } catch {}
+    } catch {
+      toast.error("Failed to post comment");
+    }
     setPostingComment(false);
   };
 
@@ -215,7 +260,10 @@ export default function CommunityPage() {
       setNewGroupDescription("");
       setCreateGroupOpen(false);
       refetchGroups();
-    } catch {}
+      toast.success("Group created!");
+    } catch {
+      toast.error("Failed to create group");
+    }
     setCreatingGroup(false);
   };
 
@@ -283,10 +331,16 @@ export default function CommunityPage() {
                       Share your workout, progress, or thoughts...
                     </div>
                     <div className="flex gap-2">
-                      <button className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
+                      <button
+                        className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400"
+                        onClick={(e) => { e.stopPropagation(); setDialogOpen(true); }}
+                      >
                         <ImageIcon className="h-5 w-5" />
                       </button>
-                      <button className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
+                      <button
+                        className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400"
+                        onClick={(e) => { e.stopPropagation(); setDialogOpen(true); }}
+                      >
                         <Video className="h-5 w-5" />
                       </button>
                     </div>
@@ -310,19 +364,73 @@ export default function CommunityPage() {
                       rows={4}
                       className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                     />
+
+                    {/* Media Preview */}
+                    {newPostMediaUrl && (
+                      <div className="relative rounded-lg overflow-hidden">
+                        {newPostMediaType === "VIDEO" ? (
+                          <video src={newPostMediaUrl} className="w-full max-h-48 object-cover" />
+                        ) : (
+                          <img src={newPostMediaUrl} alt="Upload preview" className="w-full max-h-48 object-cover" />
+                        )}
+                        <button
+                          onClick={() => { setNewPostMediaUrl(null); setNewPostMediaType(null); }}
+                          className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
-                      <Button variant="outline" className="border-zinc-700 text-zinc-300">
-                        <ImageIcon className="h-4 w-4 mr-2" />
+                      <Button
+                        variant="outline"
+                        className="border-zinc-700 text-zinc-300"
+                        disabled={uploadingMedia}
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        {uploadingMedia && newPostMediaType !== "VIDEO" ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                        )}
                         Photo
                       </Button>
-                      <Button variant="outline" className="border-zinc-700 text-zinc-300">
-                        <Video className="h-4 w-4 mr-2" />
+                      <Button
+                        variant="outline"
+                        className="border-zinc-700 text-zinc-300"
+                        disabled={uploadingMedia}
+                        onClick={() => videoInputRef.current?.click()}
+                      >
+                        {uploadingMedia && newPostMediaType !== "IMAGE" ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Video className="h-4 w-4 mr-2" />
+                        )}
                         Video
                       </Button>
                     </div>
+
+                    {/* Hidden file inputs */}
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], "IMAGE")}
+                    />
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/webm"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], "VIDEO")}
+                    />
+
                     <Button
                       className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                       onClick={handlePublish}
+                      disabled={!newPostCaption.trim() || uploadingMedia}
                     >
                       Publish
                     </Button>
@@ -345,15 +453,23 @@ export default function CommunityPage() {
               <CardContent className="pt-4 space-y-4">
                 {/* Post Header */}
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-zinc-700 text-zinc-300">
-                      {post.user.fullName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Link href={`/member/profile/${post.user.id}`}>
+                    <Avatar className="h-10 w-10 cursor-pointer">
+                      {post.user.profilePhoto ? (
+                        <img src={post.user.profilePhoto} alt={post.user.fullName} className="h-full w-full object-cover rounded-full" />
+                      ) : (
+                        <AvatarFallback className="bg-zinc-700 text-zinc-300">
+                          {post.user.fullName.charAt(0)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </Link>
                   <div className="flex-1">
-                    <p className="font-semibold text-white text-sm">
-                      {post.user.fullName}
-                    </p>
+                    <Link href={`/member/profile/${post.user.id}`}>
+                      <p className="font-semibold text-white text-sm hover:text-orange-400 transition">
+                        {post.user.fullName}
+                      </p>
+                    </Link>
                     <p className="text-xs text-zinc-500">
                       @{post.user.username} · {timeAgo(post.createdAt)}
                     </p>
@@ -370,21 +486,23 @@ export default function CommunityPage() {
                   </p>
                 )}
 
-                {/* Media */}
-                {post.mediaUrl ? (
-                  post.mediaType === "VIDEO" ? (
-                    <video src={post.mediaUrl} controls className="w-full rounded-lg" />
-                  ) : (
-                    <img src={post.mediaUrl} alt="" className="w-full rounded-lg" />
-                  )
-                ) : (
-                  <div className="h-48 bg-zinc-800 rounded-lg flex items-center justify-center">
-                    {post.mediaType === "VIDEO" ? (
-                      <Video className="h-10 w-10 text-zinc-600" />
+                {/* Media — only render if post has media */}
+                {(post.mediaUrl || post.mediaType) && (
+                  post.mediaUrl ? (
+                    post.mediaType === "VIDEO" ? (
+                      <video src={post.mediaUrl} controls className="w-full rounded-lg" />
                     ) : (
-                      <ImageIcon className="h-10 w-10 text-zinc-600" />
-                    )}
-                  </div>
+                      <img src={post.mediaUrl} alt="" className="w-full rounded-lg" />
+                    )
+                  ) : (
+                    <div className="h-48 bg-zinc-800 rounded-lg flex items-center justify-center">
+                      {post.mediaType === "VIDEO" ? (
+                        <Video className="h-10 w-10 text-zinc-600" />
+                      ) : (
+                        <ImageIcon className="h-10 w-10 text-zinc-600" />
+                      )}
+                    </div>
+                  )
                 )}
 
                 {/* Actions */}
@@ -560,19 +678,63 @@ export default function CommunityPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="discover" className="mt-4">
-          <div className="relative mb-4">
+        <TabsContent value="discover" className="mt-4 space-y-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
-              placeholder="Search people..."
+              placeholder="Search people by name or username..."
               value={discoverSearch}
               onChange={(e) => setDiscoverSearch(e.target.value)}
               className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
             />
+            {discoverSearch && (
+              <button onClick={() => setDiscoverSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-          <p className="text-zinc-400 text-center py-8">
-            Search for people to follow and connect with.
-          </p>
+
+          {discoverSearch.length >= 2 && searchResults && searchResults.length > 0 && (
+            <div className="space-y-2">
+              {searchResults.map((u) => (
+                <Card key={u.id} className="bg-zinc-900 border-zinc-800">
+                  <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                    <Link href={`/member/profile/${u.id}`}>
+                      <Avatar className="h-10 w-10 cursor-pointer">
+                        {u.profilePhoto ? (
+                          <img src={u.profilePhoto} alt={u.fullName} className="h-full w-full object-cover rounded-full" />
+                        ) : (
+                          <AvatarFallback className="bg-orange-500/20 text-orange-500">
+                            {u.fullName.charAt(0)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/member/profile/${u.id}`}>
+                        <p className="font-semibold text-white text-sm hover:text-orange-400 transition">{u.fullName}</p>
+                      </Link>
+                      <p className="text-xs text-zinc-500">@{u.username} · {u.role.toLowerCase()}</p>
+                    </div>
+                    <Link href={`/member/profile/${u.id}`}>
+                      <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                        <UserPlus className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {discoverSearch.length >= 2 && searchResults && searchResults.length === 0 && (
+            <p className="text-zinc-400 text-center py-8">No users found for &quot;{discoverSearch}&quot;</p>
+          )}
+
+          {discoverSearch.length < 2 && (
+            <p className="text-zinc-500 text-center py-8">Type at least 2 characters to search for people to follow.</p>
+          )}
         </TabsContent>
       </Tabs>
     </div>

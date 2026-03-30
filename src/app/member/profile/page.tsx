@@ -62,7 +62,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authUser?.id) return;
+    if (!authUser?.id) {
+      setLoading(false);
+      return;
+    }
     async function loadProfile() {
       try {
         const [userData, postsData, workoutsData, userStatsData] = await Promise.allSettled([

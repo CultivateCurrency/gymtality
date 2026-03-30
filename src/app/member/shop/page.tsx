@@ -93,8 +93,8 @@ function ShopContent() {
         body: JSON.stringify({ productId, quantity: 1 }),
       });
       refetchCart();
-    } catch {
-      // silently fail for now
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to add to cart");
     }
   };
 
@@ -109,8 +109,8 @@ function ShopContent() {
         });
       }
       refetchCart();
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update cart");
     }
   };
 
@@ -118,8 +118,8 @@ function ShopContent() {
     try {
       await apiFetch(`/api/shop/cart/${cartItemId}`, { method: "DELETE" });
       refetchCart();
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to remove item");
     }
   };
 

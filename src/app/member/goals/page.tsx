@@ -29,6 +29,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 const GOAL_TYPES = [
   { value: "weight", label: "Weight", icon: TrendingUp, color: "text-blue-500" },
@@ -106,14 +107,20 @@ export default function GoalsPage() {
       resetForm();
       setDialogOpen(false);
       refetch();
-    } catch {}
+      toast.success(editingGoal ? "Goal updated" : "Goal created");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save goal");
+    }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await apiFetch(`/api/goals/${id}`, { method: "DELETE" });
       refetch();
-    } catch {}
+      toast.success("Goal deleted");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete goal");
+    }
   };
 
   const handleEdit = (goal: Goal) => {

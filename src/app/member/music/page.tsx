@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -35,7 +35,7 @@ import { useAuthStore } from "@/store/auth-store";
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
@@ -85,11 +85,27 @@ export default function MusicPage() {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
   const [volume, setVolume] = useState(75);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
+  const [likedSongs, setLikedSongs] = useState<Set<string>>(new Set());
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [musicSearch, setMusicSearch] = useState("");
   const { user } = useAuthStore();
   const userId = user?.id;
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  // Refs so audio event handlers always see fresh values (no stale closures)
+  const shuffleRef = useRef(false);
+  const repeatRef = useRef(false);
+  const songsRef = useRef<Song[]>([]);
+  const currentSongRef = useRef<Song | null>(null);
+
+  shuffleRef.current = isShuffle;
+  repeatRef.current = isRepeat;
+  currentSongRef.current = currentSong;
 
   const { data: albums, loading: albumsLoading } = useApi<Album[]>("/api/music/albums");
   const { data: albumDetail, loading: songsLoading } = useApi<AlbumDetail>(
@@ -100,11 +116,156 @@ export default function MusicPage() {
   );
 
   const songs = albumDetail?.songs ?? [];
+  songsRef.current = songs;
 
-  const playSong = (song: Song) => {
+  const playSong = useCallback((song: Song) => {
     setCurrentSong(song);
     setIsPlaying(true);
     setShowPlayer(true);
+    setCurrentTime(0);
+  }, []);
+
+  const skipToSong = useCallback((song: Song) => {
+    playSong(song);
+  }, [playSong]);
+
+  const handleSkipForward = useCallback(() => {
+    const list = songsRef.current;
+    const cur = currentSongRef.current;
+    if (!list.length) return;
+
+    if (shuffleRef.current) {
+      const others = list.filter((s) => s.id !== cur?.id);
+      const next = others.length > 0 ? others[Math.floor(Math.random() * others.length)] : list[0];
+      skipToSong(next);
+      return;
+    }
+
+    const idx = list.findIndex((s) => s.id === cur?.id);
+    if (idx === -1 || idx === list.length - 1) {
+      if (repeatRef.current) skipToSong(list[0]);
+      // else stop — we're at the end
+    } else {
+      skipToSong(list[idx + 1]);
+    }
+  }, [skipToSong]);
+
+  const handleSkipBack = useCallback(() => {
+    const list = songsRef.current;
+    const cur = currentSongRef.current;
+    if (!list.length) return;
+
+    // If more than 3s in, restart current song
+    const audio = audioRef.current;
+    if (audio && audio.currentTime > 3) {
+      audio.currentTime = 0;
+      setCurrentTime(0);
+      return;
+    }
+
+    const idx = list.findIndex((s) => s.id === cur?.id);
+    if (idx <= 0) {
+      skipToSong(list[0]);
+    } else {
+      skipToSong(list[idx - 1]);
+    }
+  }, [skipToSong]);
+
+  // Wire up audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleDurationChange = () => setAudioDuration(audio.duration || 0);
+    const handleEnded = () => {
+      if (repeatRef.current && songsRef.current.length === 1) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } else {
+        handleSkipForward();
+      }
+    };
+    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => setIsPlaying(true);
+
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("durationchange", handleDurationChange);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("play", handlePlay);
+
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("durationchange", handleDurationChange);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("play", handlePlay);
+    };
+  }, [handleSkipForward]);
+
+  // Load new song into audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentSong) return;
+    if (currentSong.audioUrl) {
+      audio.src = currentSong.audioUrl;
+      audio.volume = volume / 100;
+      audio.play().catch(() => {});
+    } else {
+      // No audio URL — simulate play state only (preview mode)
+      audio.src = "";
+      setIsPlaying(true);
+    }
+  }, [currentSong?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync play/pause button to audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentSong?.audioUrl) return;
+    if (isPlaying) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync volume
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume / 100;
+  }, [volume]);
+
+  const handleToggleLike = async (e: React.MouseEvent, song: Song) => {
+    e.stopPropagation();
+    const wasLiked = likedSongs.has(song.id);
+    // Optimistic update
+    setLikedSongs((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(song.id);
+      else next.add(song.id);
+      return next;
+    });
+    try {
+      await apiFetch(`/api/music/songs/${song.id}/like`, {
+        method: wasLiked ? "DELETE" : "POST",
+      });
+    } catch {
+      // Revert on failure
+      setLikedSongs((prev) => {
+        const next = new Set(prev);
+        if (wasLiked) next.add(song.id);
+        else next.delete(song.id);
+        return next;
+      });
+    }
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !audioDuration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = ratio * audioDuration;
   };
 
   const handleCreatePlaylist = async () => {
@@ -120,8 +281,13 @@ export default function MusicPage() {
     } catch {}
   };
 
+  const progressRatio = audioDuration > 0 ? currentTime / audioDuration : 0;
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-32">
+      {/* Hidden audio element */}
+      <audio ref={audioRef} preload="metadata" />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Music</h1>
@@ -213,27 +379,34 @@ export default function MusicPage() {
           </div>
         ) : (albums && albums.length > 0) ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {albums.filter((a) => !musicSearch || a.name.toLowerCase().includes(musicSearch.toLowerCase()) || (a.category || "").toLowerCase().includes(musicSearch.toLowerCase())).map((album) => (
-              <button
-                key={album.id}
-                onClick={() => setSelectedAlbum(selectedAlbum === album.id ? null : album.id)}
-                className="text-left group"
-              >
-                <div
-                  className={`aspect-square rounded-xl bg-gradient-to-br ${gradientForCategory(album.category)} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform ${
-                    selectedAlbum === album.id ? "ring-2 ring-orange-500" : ""
-                  }`}
+            {albums
+              .filter(
+                (a) =>
+                  !musicSearch ||
+                  a.name.toLowerCase().includes(musicSearch.toLowerCase()) ||
+                  (a.category || "").toLowerCase().includes(musicSearch.toLowerCase())
+              )
+              .map((album) => (
+                <button
+                  key={album.id}
+                  onClick={() => setSelectedAlbum(selectedAlbum === album.id ? null : album.id)}
+                  className="text-left group"
                 >
-                  {album.coverImage ? (
-                    <img src={album.coverImage} alt={album.name} className="w-full h-full object-cover rounded-xl" />
-                  ) : (
-                    <Music className="h-10 w-10 text-white/80" />
-                  )}
-                </div>
-                <h3 className="font-semibold text-white text-sm truncate">{album.name}</h3>
-                <p className="text-xs text-zinc-500">{album._count.songs} songs · {album.category || "General"}</p>
-              </button>
-            ))}
+                  <div
+                    className={`aspect-square rounded-xl bg-gradient-to-br ${gradientForCategory(album.category)} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform ${
+                      selectedAlbum === album.id ? "ring-2 ring-orange-500" : ""
+                    }`}
+                  >
+                    {album.coverImage ? (
+                      <img src={album.coverImage} alt={album.name} className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      <Music className="h-10 w-10 text-white/80" />
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-white text-sm truncate">{album.name}</h3>
+                  <p className="text-xs text-zinc-500">{album._count.songs} songs · {album.category || "General"}</p>
+                </button>
+              ))}
           </div>
         ) : (
           <p className="text-zinc-500 text-sm">No albums available yet.</p>
@@ -253,30 +426,45 @@ export default function MusicPage() {
               </div>
             ) : (
               <div className="space-y-1">
-                {songs.filter((s) => !musicSearch || s.title.toLowerCase().includes(musicSearch.toLowerCase()) || (s.artist || "").toLowerCase().includes(musicSearch.toLowerCase())).map((song, i) => (
-                  <button
-                    key={song.id}
-                    onClick={() => playSong(song)}
-                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-zinc-800 transition ${
-                      currentSong?.id === song.id ? "bg-orange-500/10" : ""
-                    }`}
-                  >
-                    <span className="text-sm text-zinc-500 w-6">{i + 1}</span>
-                    <div className="flex-1 text-left">
-                      <p className={`text-sm font-medium ${
-                        currentSong?.id === song.id ? "text-orange-500" : "text-white"
-                      }`}>
-                        {song.title}
-                      </p>
-                      <p className="text-xs text-zinc-500">{song.artist || "Unknown Artist"}</p>
-                    </div>
-                    <button className="p-1 text-zinc-500 hover:text-red-400">
-                      <Heart className="h-4 w-4" />
+                {songs
+                  .filter(
+                    (s) =>
+                      !musicSearch ||
+                      s.title.toLowerCase().includes(musicSearch.toLowerCase()) ||
+                      (s.artist || "").toLowerCase().includes(musicSearch.toLowerCase())
+                  )
+                  .map((song, i) => (
+                    <button
+                      key={song.id}
+                      onClick={() => playSong(song)}
+                      className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-zinc-800 transition ${
+                        currentSong?.id === song.id ? "bg-orange-500/10" : ""
+                      }`}
+                    >
+                      <span className="text-sm text-zinc-500 w-6">{i + 1}</span>
+                      <div className="flex-1 text-left">
+                        <p
+                          className={`text-sm font-medium ${
+                            currentSong?.id === song.id ? "text-orange-500" : "text-white"
+                          }`}
+                        >
+                          {song.title}
+                        </p>
+                        <p className="text-xs text-zinc-500">{song.artist || "Unknown Artist"}</p>
+                      </div>
+                      <button
+                        onClick={(e) => handleToggleLike(e, song)}
+                        className={`p-1 transition ${
+                          likedSongs.has(song.id) ? "text-red-400" : "text-zinc-500 hover:text-red-400"
+                        }`}
+                        aria-label={likedSongs.has(song.id) ? "Unlike song" : "Like song"}
+                      >
+                        <Heart className={`h-4 w-4 ${likedSongs.has(song.id) ? "fill-red-400" : ""}`} />
+                      </button>
+                      <span className="text-xs text-zinc-500">{formatDuration(song.duration)}</span>
+                      <Play className="h-4 w-4 text-zinc-500" />
                     </button>
-                    <span className="text-xs text-zinc-500">{formatDuration(song.duration)}</span>
-                    <Play className="h-4 w-4 text-zinc-500" />
-                  </button>
-                ))}
+                  ))}
                 {songs.length === 0 && (
                   <p className="text-zinc-500 text-sm text-center py-4">No songs in this album yet.</p>
                 )}
@@ -288,10 +476,10 @@ export default function MusicPage() {
 
       {/* Bottom Music Player */}
       {showPlayer && currentSong && (
-        <div className="fixed bottom-0 left-64 right-0 bg-zinc-950 border-t border-zinc-800 p-4 z-50">
+        <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-zinc-950 border-t border-zinc-800 p-4 z-50">
           <div className="max-w-7xl mx-auto flex items-center gap-6">
             {/* Song Info */}
-            <div className="flex items-center gap-3 w-64">
+            <div className="flex items-center gap-3 w-64 min-w-0">
               <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center flex-shrink-0">
                 <Music className="h-6 w-6 text-white" />
               </div>
@@ -304,15 +492,24 @@ export default function MusicPage() {
             {/* Controls */}
             <div className="flex-1 flex flex-col items-center gap-2">
               <div className="flex items-center gap-4">
-                <button className="text-zinc-400 hover:text-white transition">
+                <button
+                  onClick={() => setIsShuffle((v) => !v)}
+                  className={`transition ${isShuffle ? "text-orange-500" : "text-zinc-400 hover:text-white"}`}
+                  aria-label="Toggle shuffle"
+                >
                   <Shuffle className="h-4 w-4" />
                 </button>
-                <button className="text-zinc-400 hover:text-white transition">
+                <button
+                  onClick={handleSkipBack}
+                  className="text-zinc-400 hover:text-white transition"
+                  aria-label="Previous song"
+                >
                   <SkipBack className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={() => setIsPlaying(!isPlaying)}
+                  onClick={() => setIsPlaying((v) => !v)}
                   className="bg-orange-500 rounded-full p-2 hover:bg-orange-600 transition"
+                  aria-label={isPlaying ? "Pause" : "Play"}
                 >
                   {isPlaying ? (
                     <Pause className="h-5 w-5 text-white" />
@@ -320,26 +517,44 @@ export default function MusicPage() {
                     <Play className="h-5 w-5 text-white" />
                   )}
                 </button>
-                <button className="text-zinc-400 hover:text-white transition">
+                <button
+                  onClick={handleSkipForward}
+                  className="text-zinc-400 hover:text-white transition"
+                  aria-label="Next song"
+                >
                   <SkipForward className="h-5 w-5" />
                 </button>
-                <button className="text-zinc-400 hover:text-white transition">
+                <button
+                  onClick={() => setIsRepeat((v) => !v)}
+                  className={`transition ${isRepeat ? "text-orange-500" : "text-zinc-400 hover:text-white"}`}
+                  aria-label="Toggle repeat"
+                >
                   <Repeat className="h-4 w-4" />
                 </button>
               </div>
               {/* Progress Bar */}
               <div className="w-full max-w-md flex items-center gap-2">
-                <span className="text-xs text-zinc-500">0:00</span>
-                <div className="flex-1 h-1 bg-zinc-800 rounded-full">
-                  <div className="h-full w-1/3 bg-orange-500 rounded-full" />
+                <span className="text-xs text-zinc-500">{formatDuration(currentTime)}</span>
+                <div
+                  className="flex-1 h-1 bg-zinc-800 rounded-full cursor-pointer relative"
+                  onClick={handleSeek}
+                  role="slider"
+                  aria-label="Seek"
+                >
+                  <div
+                    className="h-full bg-orange-500 rounded-full transition-all"
+                    style={{ width: `${progressRatio * 100}%` }}
+                  />
                 </div>
-                <span className="text-xs text-zinc-500">{formatDuration(currentSong.duration)}</span>
+                <span className="text-xs text-zinc-500">
+                  {audioDuration > 0 ? formatDuration(audioDuration) : formatDuration(currentSong.duration)}
+                </span>
               </div>
             </div>
 
             {/* Volume */}
-            <div className="flex items-center gap-2 w-40">
-              <Volume2 className="h-4 w-4 text-zinc-400" />
+            <div className="hidden sm:flex items-center gap-2 w-40">
+              <Volume2 className="h-4 w-4 text-zinc-400 flex-shrink-0" />
               <input
                 type="range"
                 min={0}
@@ -347,6 +562,7 @@ export default function MusicPage() {
                 value={volume}
                 onChange={(e) => setVolume(parseInt(e.target.value))}
                 className="w-full accent-orange-500"
+                aria-label="Volume"
               />
             </div>
           </div>

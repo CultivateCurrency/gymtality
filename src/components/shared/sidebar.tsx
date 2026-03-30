@@ -90,7 +90,7 @@ const memberNavGroups: NavGroup[] = [
   {
     label: "Account",
     items: [
-      { label: "Help & Support", href: "/member/support", icon: HelpCircle },
+      { label: "Help & Support", href: "/member/help", icon: HelpCircle },
       { label: "Profile", href: "/member/profile", icon: User },
       { label: "Settings", href: "/member/settings", icon: Settings },
     ],
