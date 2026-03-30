@@ -35,11 +35,20 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401) {
-    // Clear auth and redirect to login
-    localStorage.removeItem("gymtality-auth");
-    document.cookie = "gymtality_auth=; path=/; max-age=0";
-    document.cookie = "gymtality_role=; path=/; max-age=0";
-    window.location.href = "/login";
+    // Only redirect if user has a real (non-guest) session
+    try {
+      const raw = localStorage.getItem("gymtality-auth");
+      const parsed = raw ? JSON.parse(raw) : null;
+      const isGuest = parsed?.state?.user?.role === "GUEST";
+      if (!isGuest) {
+        localStorage.removeItem("gymtality-auth");
+        document.cookie = "gymtality_auth=; path=/; max-age=0";
+        document.cookie = "gymtality_role=; path=/; max-age=0";
+        window.location.href = "/login";
+      }
+    } catch {
+      window.location.href = "/login";
+    }
     throw new Error("Session expired. Please log in again.");
   }
 
@@ -62,10 +71,19 @@ async function apiFetchWithMeta<T>(url: string, options?: RequestInit): Promise<
   });
 
   if (res.status === 401) {
-    localStorage.removeItem("gymtality-auth");
-    document.cookie = "gymtality_auth=; path=/; max-age=0";
-    document.cookie = "gymtality_role=; path=/; max-age=0";
-    window.location.href = "/login";
+    try {
+      const raw = localStorage.getItem("gymtality-auth");
+      const parsed = raw ? JSON.parse(raw) : null;
+      const isGuest = parsed?.state?.user?.role === "GUEST";
+      if (!isGuest) {
+        localStorage.removeItem("gymtality-auth");
+        document.cookie = "gymtality_auth=; path=/; max-age=0";
+        document.cookie = "gymtality_role=; path=/; max-age=0";
+        window.location.href = "/login";
+      }
+    } catch {
+      window.location.href = "/login";
+    }
     throw new Error("Session expired. Please log in again.");
   }
 

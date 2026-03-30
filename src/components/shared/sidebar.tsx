@@ -142,6 +142,8 @@ const adminNavGroups: NavGroup[] = [
       { label: "Content", href: "/admin/content", icon: Music },
       { label: "Events", href: "/admin/events", icon: Calendar },
       { label: "Questionnaire", href: "/admin/questionnaire", icon: HelpCircle },
+      { label: "Goal Templates", href: "/admin/goals", icon: Target },
+      { label: "Diet Templates", href: "/admin/diet", icon: UtensilsCrossed },
       { label: "CMS", href: "/admin/cms", icon: FileText },
     ],
   },

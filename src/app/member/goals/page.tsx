@@ -49,7 +49,14 @@ interface Goal {
   createdAt: string;
 }
 
-// backend returns array directly under data
+interface GoalTemplate {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  target: number;
+  unit: string;
+}
 
 export default function GoalsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -63,6 +70,27 @@ export default function GoalsPage() {
 
   const { data, loading, error, refetch } = useApi<Goal[]>("/api/workouts/goals");
   const goals = data ?? [];
+
+  const { data: templates } = useApi<GoalTemplate[]>("/api/admin/goal-templates");
+  const goalTemplates = (templates ?? []).filter((t: any) => t.active !== false);
+
+  const handleAdoptTemplate = async (tpl: GoalTemplate) => {
+    try {
+      await apiFetch("/api/workouts/goals", {
+        method: "POST",
+        body: JSON.stringify({
+          title: tpl.title,
+          type: tpl.type,
+          target: tpl.target,
+          unit: tpl.unit,
+        }),
+      });
+      toast.success(`"${tpl.title}" added to your goals`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to add goal");
+    }
+  };
 
   const resetForm = () => {
     setFormType("weight");
@@ -392,6 +420,44 @@ export default function GoalsPage() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Admin Goal Templates */}
+      {goalTemplates.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Recommended Goals</h2>
+            <p className="text-zinc-400 text-sm">Tap a template to instantly add it to your goals.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {goalTemplates.map((tpl) => {
+              const { icon: Icon, color } = getGoalIcon(tpl.type);
+              return (
+                <Card
+                  key={tpl.id}
+                  className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition cursor-pointer group"
+                  onClick={() => handleAdoptTemplate(tpl)}
+                >
+                  <CardContent className="pt-4 pb-4 flex items-center gap-4">
+                    <div className="p-2 rounded-xl bg-zinc-800 group-hover:bg-orange-500/10 transition">
+                      <Icon className={`h-5 w-5 ${color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white text-sm truncate">{tpl.title}</p>
+                      {tpl.description && (
+                        <p className="text-zinc-400 text-xs truncate">{tpl.description}</p>
+                      )}
+                      <p className="text-zinc-500 text-xs mt-0.5">
+                        Target: {tpl.target} {tpl.unit}
+                      </p>
+                    </div>
+                    <Plus className="h-4 w-4 text-zinc-500 group-hover:text-orange-400 transition shrink-0" />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

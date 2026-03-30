@@ -42,6 +42,34 @@ export default function MealsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const { data: plans, loading, refetch } = useApi<MealPlan[]>("/api/workouts/meals");
+  const { data: dietTemplates } = useApi<any[]>("/api/admin/diet-templates");
+  const activeTemplates = (dietTemplates ?? []).filter((t) => t.active !== false);
+
+  const handleAdoptTemplate = async (tpl: any) => {
+    try {
+      await apiFetch("/api/workouts/meals", {
+        method: "POST",
+        body: JSON.stringify({
+          name: tpl.name,
+          description: tpl.description,
+          meals: (tpl.items ?? []).map((item: any) => ({
+            name: item.name,
+            mealType: item.mealType,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+            notes: item.notes,
+            dayOfWeek: item.dayOfWeek,
+          })),
+        }),
+      });
+      toast.success(`"${tpl.name}" added to your meal plans`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to adopt template");
+    }
+  };
 
   const addMeal = () => {
     setMeals([...meals, { name: "", mealType: "BREAKFAST", dayOfWeek: "MON" }]);
@@ -232,6 +260,43 @@ export default function MealsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Admin Diet Templates */}
+      {activeTemplates.length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-zinc-800">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Recommended Diet Plans</h2>
+            <p className="text-zinc-400 text-sm">Tap a plan to add it to your meal plans instantly.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeTemplates.map((tpl) => (
+              <Card
+                key={tpl.id}
+                className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition cursor-pointer group"
+                onClick={() => handleAdoptTemplate(tpl)}
+              >
+                <CardContent className="pt-4 pb-4 flex items-center gap-4">
+                  <div className="p-2 rounded-xl bg-zinc-800 group-hover:bg-orange-500/10 transition">
+                    <UtensilsCrossed className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{tpl.name}</p>
+                    {tpl.description && (
+                      <p className="text-zinc-400 text-xs truncate">{tpl.description}</p>
+                    )}
+                    {tpl.category && (
+                      <p className="text-zinc-500 text-xs mt-0.5 capitalize">
+                        {tpl.category.replace(/_/g, " ")} · {(tpl.items ?? []).length} meals
+                      </p>
+                    )}
+                  </div>
+                  <Plus className="h-4 w-4 text-zinc-500 group-hover:text-orange-400 transition shrink-0" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
