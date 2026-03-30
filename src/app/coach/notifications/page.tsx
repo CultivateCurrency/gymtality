@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -92,8 +93,8 @@ export default function CoachNotificationsPage() {
         body: JSON.stringify({ id, read: !currentRead }),
       });
       refetch();
-    } catch (err) {
-      console.error("Failed to update notification:", err);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update notification");
     } finally {
       setTogglingId(null);
     }
@@ -106,8 +107,8 @@ export default function CoachNotificationsPage() {
         body: JSON.stringify({ markAllRead: true }),
       });
       refetch();
-    } catch (err) {
-      console.error("Failed to mark all read:", err);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to mark all as read");
     }
   };
 

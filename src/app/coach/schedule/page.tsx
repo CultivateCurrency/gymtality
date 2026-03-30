@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -169,8 +170,8 @@ export default function CoachSchedulePage() {
     try {
       await apiFetch(`/api/events/${id}`, { method: "DELETE" });
       refetch();
-    } catch (err) {
-      console.error("Failed to delete event:", err);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete event");
     }
   };
 

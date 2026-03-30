@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useApi, useMutation } from "@/hooks/use-api";
+import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import {
   Card,
   CardContent,
@@ -14,6 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Search,
   Users,
@@ -28,6 +35,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // --- Types ---
 
@@ -107,6 +115,9 @@ export default function CoachClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [addClientEmail, setAddClientEmail] = useState("");
+  const [addingClient, setAddingClient] = useState(false);
 
   const { data, loading, error, refetch } = useApi<ClientsResponse>("/api/coach/clients");
   const { mutate: saveNote, loading: savingNote } = useMutation<unknown, { note: string }>(
@@ -121,6 +132,25 @@ export default function CoachClientsPage() {
     // We set this inside render; React will re-render once
     // Using a controlled pattern: set on first data arrival
   }
+
+  const handleAddClient = async () => {
+    if (!addClientEmail.trim()) return;
+    setAddingClient(true);
+    try {
+      await apiFetch("/api/coach/clients", {
+        method: "POST",
+        body: JSON.stringify({ email: addClientEmail.trim() }),
+      });
+      toast.success("Client invitation sent");
+      setAddClientEmail("");
+      setAddClientOpen(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to add client");
+    } finally {
+      setAddingClient(false);
+    }
+  };
 
   const filteredClients = clients.filter(
     (c) =>
@@ -221,10 +251,50 @@ export default function CoachClientsPage() {
             Track, manage, and communicate with your clients.
           </p>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+        <Button
+          className="bg-orange-500 hover:bg-orange-600 text-white"
+          onClick={() => setAddClientOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Client
         </Button>
+
+        {/* Add Client Dialog */}
+        <Dialog open={addClientOpen} onOpenChange={setAddClientOpen}>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Add Client</DialogTitle>
+            </DialogHeader>
+            <p className="text-zinc-400 text-sm">
+              Enter the email address of the member you want to add as a client.
+            </p>
+            <Input
+              placeholder="client@example.com"
+              type="email"
+              value={addClientEmail}
+              onChange={(e) => setAddClientEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddClient()}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => setAddClientOpen(false)}
+                className="text-zinc-400"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddClient}
+                disabled={addingClient || !addClientEmail.trim()}
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                {addingClient ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Send Invitation
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}

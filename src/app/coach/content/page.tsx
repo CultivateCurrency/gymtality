@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import { useUpload } from "@/hooks/use-upload";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -150,8 +151,8 @@ export default function CoachContentPage() {
               })),
             }),
           });
-        } catch (err) {
-          console.error("Failed to add exercises:", err);
+        } catch (err: any) {
+          toast.error(err?.message || "Failed to add exercises to plan");
         }
       }
       setPlanName("");
@@ -169,8 +170,8 @@ export default function CoachContentPage() {
     try {
       await apiFetch(`/api/workouts/${id}`, { method: "DELETE" });
       refetch();
-    } catch (err) {
-      console.error("Failed to delete plan:", err);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete plan");
     }
   };
 

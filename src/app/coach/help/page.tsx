@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -92,8 +93,8 @@ export default function CoachHelpPage() {
       setSubject("");
       setMessage("");
       setTimeout(() => setSent(false), 4000);
-    } catch (err) {
-      console.error("Failed to send support request:", err);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send support request. Please try again.");
     } finally {
       setSending(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useApi, useMutation, apiFetch } from '@/hooks/use-api'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,8 +51,9 @@ export default function AdminReportsPage() {
       const data = await apiFetch<{ users: { subscription?: { id: string; plan: string } }[] }>(`/api/admin/users?search=${encodeURIComponent(subEmail)}`)
       const user = (data as any)?.users?.[0] ?? (data as any)?.[0]
       setSubResult(user?.subscription ?? null)
-    } catch {
+    } catch (err: any) {
       setSubResult(null)
+      toast.error(err?.message || 'Failed to search subscription')
     } finally {
       setSubSearchLoading(false)
     }

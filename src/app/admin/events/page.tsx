@@ -26,6 +26,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -237,8 +238,8 @@ export default function AdminEventsPage() {
     try {
       await apiFetch(`/api/events/${id}`, { method: "DELETE" });
       refetch();
-    } catch (e) {
-      // silently fail — refetch will show current state
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete event");
     } finally {
       setDeleting(null);
     }

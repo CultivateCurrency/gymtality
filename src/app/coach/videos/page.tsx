@@ -28,6 +28,7 @@ import {
   FileVideo,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 import { useUpload } from "@/hooks/use-upload";
 
 interface WorkoutVideo {
@@ -87,7 +88,9 @@ export default function CoachVideosPage() {
       setVideoFile(null);
       setDialogOpen(false);
       refetch();
-    } catch {
+      toast.success("Video uploaded successfully");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to upload video");
     } finally {
       setUploading(false);
     }
@@ -97,7 +100,10 @@ export default function CoachVideosPage() {
     try {
       await apiFetch(`/api/workouts/${id}`, { method: "DELETE" });
       refetch();
-    } catch {}
+      toast.success("Video deleted");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete video");
+    }
   };
 
   const categories = [

@@ -457,7 +457,10 @@ export default function CoachSettingsPage() {
       {/* Support & Legal */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="pt-4 divide-y divide-zinc-800">
-          <button className="flex items-center justify-between py-3 w-full group">
+          <button
+            onClick={() => router.push("/coach/help")}
+            className="flex items-center justify-between py-3 w-full group"
+          >
             <div className="flex items-center gap-3">
               <HelpCircle className="h-5 w-5 text-green-400" />
               <span className="text-zinc-300 group-hover:text-white transition">
@@ -466,7 +469,10 @@ export default function CoachSettingsPage() {
             </div>
             <ChevronRight className="h-4 w-4 text-zinc-600" />
           </button>
-          <button className="flex items-center justify-between py-3 w-full group">
+          <button
+            onClick={() => router.push("/privacy")}
+            className="flex items-center justify-between py-3 w-full group"
+          >
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 text-cyan-400" />
               <span className="text-zinc-300 group-hover:text-white transition">
@@ -475,7 +481,10 @@ export default function CoachSettingsPage() {
             </div>
             <ChevronRight className="h-4 w-4 text-zinc-600" />
           </button>
-          <button className="flex items-center justify-between py-3 w-full group">
+          <button
+            onClick={() => router.push("/terms")}
+            className="flex items-center justify-between py-3 w-full group"
+          >
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-zinc-400" />
               <span className="text-zinc-300 group-hover:text-white transition">
