@@ -1,15 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useAuthStore } from "@/store/auth-store";
 
 const rotatingWords = ["Strength", "Discipline", "Focus", "Clarity", "Consistency"];
 
 export default function WelcomePage() {
+  const router = useRouter();
+  const { loginAsGuest } = useAuthStore();
   const [wordIndex, setWordIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
+
+  function handleGuestAccess() {
+    loginAsGuest();
+    router.push("/member/explore");
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -70,11 +79,12 @@ export default function WelcomePage() {
               <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </Link>
-          <Link href="/member/dashboard" className="w-full">
-            <button className="w-full py-[14px] px-8 bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 hover:border-white/15 text-zinc-300 hover:text-white font-semibold text-[14px] rounded-xl transition-all duration-200 active:scale-[0.98]">
-              Continue as Guest
-            </button>
-          </Link>
+          <button
+            onClick={handleGuestAccess}
+            className="w-full py-[14px] px-8 bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 hover:border-white/15 text-zinc-300 hover:text-white font-semibold text-[14px] rounded-xl transition-all duration-200 active:scale-[0.98]"
+          >
+            Continue as Guest
+          </button>
         </div>
 
         {/* Login link */}

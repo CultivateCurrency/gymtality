@@ -49,9 +49,7 @@ interface Goal {
   createdAt: string;
 }
 
-interface GoalsResponse {
-  goals: Goal[];
-}
+// backend returns array directly under data
 
 export default function GoalsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -63,8 +61,8 @@ export default function GoalsPage() {
   const [formTargetDate, setFormTargetDate] = useState("");
   const [formCurrentValue, setFormCurrentValue] = useState("");
 
-  const { data, loading, error, refetch } = useApi<GoalsResponse>("/api/goals");
-  const goals = data?.goals ?? [];
+  const { data, loading, error, refetch } = useApi<Goal[]>("/api/workouts/goals");
+  const goals = data ?? [];
 
   const resetForm = () => {
     setFormType("weight");
@@ -80,8 +78,8 @@ export default function GoalsPage() {
     if (!formTitle.trim() || !formTarget) return;
     try {
       if (editingGoal) {
-        await apiFetch(`/api/goals/${editingGoal.id}`, {
-          method: "PUT",
+        await apiFetch(`/api/workouts/goals/${editingGoal.id}`, {
+          method: "PATCH",
           body: JSON.stringify({
             title: formTitle,
             type: formType,
@@ -92,7 +90,7 @@ export default function GoalsPage() {
           }),
         });
       } else {
-        await apiFetch("/api/goals", {
+        await apiFetch("/api/workouts/goals", {
           method: "POST",
           body: JSON.stringify({
             title: formTitle,
@@ -115,7 +113,7 @@ export default function GoalsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await apiFetch(`/api/goals/${id}`, { method: "DELETE" });
+      await apiFetch(`/api/workouts/goals/${id}`, { method: "DELETE" });
       refetch();
       toast.success("Goal deleted");
     } catch (err: any) {

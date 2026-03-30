@@ -20,6 +20,7 @@ interface AuthStore {
   pendingEmail: string | null;
 
   login: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  loginAsGuest: () => void;
   logout: () => void;
   setTokens: (accessToken: string, refreshToken?: string) => void;
   setPendingEmail: (email: string | null) => void;
@@ -40,6 +41,26 @@ export const useAuthStore = create<AuthStore>()(
           document.cookie = `gymtality_role=${user.role}; path=/; SameSite=Lax; max-age=${60 * 60 * 24 * 30}`;
         }
         set({ user, accessToken, refreshToken });
+      },
+
+      loginAsGuest: () => {
+        if (typeof document !== "undefined") {
+          document.cookie = `gymtality_auth=1; path=/; SameSite=Lax; max-age=${60 * 60 * 2}`;
+          document.cookie = `gymtality_role=GUEST; path=/; SameSite=Lax; max-age=${60 * 60 * 2}`;
+        }
+        set({
+          user: {
+            id: "guest",
+            email: "",
+            fullName: "Guest",
+            username: "guest",
+            role: "GUEST",
+            profilePhoto: null,
+            tenantId: "",
+          },
+          accessToken: null,
+          refreshToken: null,
+        });
       },
 
       logout: () => {

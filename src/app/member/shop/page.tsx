@@ -33,20 +33,18 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  salePrice: number | null;
   category: string | null;
+  imageUrl: string | null;
   images: string[];
   stock: number;
+  featured: boolean;
 }
 
 interface CartItem {
   id: string;
   quantity: number;
   product: Product;
-}
-
-interface ProductsResponse {
-  products: Product[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
 interface CartResponse {
@@ -69,11 +67,9 @@ function ShopContent() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const productsUrl = `/api/shop/products?page=1&limit=20${activeCategory !== "All" ? `&category=${activeCategory}` : ""}`;
-  const { data: productsData, loading, error } = useApi<ProductsResponse>(productsUrl);
+  const productsUrl = `/api/shop/products?page=1&limit=20${activeCategory !== "All" ? `&category=${encodeURIComponent(activeCategory)}` : ""}`;
+  const { data: products, loading, error } = useApi<Product[]>(productsUrl);
   const { data: cartData, refetch: refetchCart } = useApi<CartResponse>("/api/shop/cart");
-
-  const products = productsData?.products ?? [];
   const cartItems = cartData?.items ?? [];
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -222,11 +218,21 @@ function ShopContent() {
             <Card key={product.id} className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition group">
               <CardContent className="pt-4 space-y-3">
                 {/* Image Placeholder */}
-                <div className="relative h-48 bg-zinc-800 rounded-lg flex items-center justify-center">
-                  {product.images?.[0] ? (
-                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                <div className="relative h-48 bg-zinc-800 rounded-lg flex items-center justify-center overflow-hidden">
+                  {product.imageUrl || product.images?.[0] ? (
+                    <img src={product.imageUrl ?? product.images[0]} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                   ) : (
                     <ImageIcon className="h-12 w-12 text-zinc-600" />
+                  )}
+                  {product.salePrice != null && product.stock > 0 && (
+                    <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      SALE
+                    </div>
+                  )}
+                  {product.featured && (
+                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      FEATURED
+                    </div>
                   )}
                   {product.stock <= 0 && (
                     <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
@@ -258,7 +264,16 @@ function ShopContent() {
                     <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
                     <span className="text-sm text-zinc-300">--</span>
                   </div>
-                  <span className="text-lg font-bold text-orange-500">${product.price.toFixed(2)}</span>
+                  <div className="text-right">
+                    {product.salePrice != null ? (
+                      <>
+                        <span className="text-lg font-bold text-green-400">${product.salePrice.toFixed(2)}</span>
+                        <span className="text-xs text-zinc-500 line-through ml-1">${product.price.toFixed(2)}</span>
+                      </>
+                    ) : (
+                      <span className="text-lg font-bold text-orange-500">${product.price.toFixed(2)}</span>
+                    )}
+                  </div>
                 </div>
 
                 <Button

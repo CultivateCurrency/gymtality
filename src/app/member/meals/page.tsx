@@ -41,7 +41,7 @@ export default function MealsPage() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const { data: plans, loading, refetch } = useApi<MealPlan[]>("/api/meals");
+  const { data: plans, loading, refetch } = useApi<MealPlan[]>("/api/workouts/meals");
 
   const addMeal = () => {
     setMeals([...meals, { name: "", mealType: "BREAKFAST", dayOfWeek: "MON" }]);
@@ -61,7 +61,7 @@ export default function MealsPage() {
     if (!planName.trim()) return;
     setCreating(true);
     try {
-      await apiFetch("/api/meals", {
+      await apiFetch("/api/workouts/meals", {
         method: "POST",
         body: JSON.stringify({
           name: planName,
@@ -90,7 +90,7 @@ export default function MealsPage() {
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
-      await apiFetch(`/api/meals/${id}`, { method: "DELETE" });
+      await apiFetch(`/api/workouts/meals/${id}`, { method: "DELETE" });
       refetch();
       toast.success("Meal plan deleted");
     } catch {

@@ -23,6 +23,15 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
+  // Guests can only browse /member pages — block admin, coach, and write-heavy pages
+  if (role === "GUEST") {
+    const guestBlocked = ["/admin", "/coach", "/member/settings", "/member/profile", "/member/messages"];
+    if (guestBlocked.some((r) => pathname.startsWith(r))) {
+      return NextResponse.redirect(new URL("/signup", req.url));
+    }
+    return NextResponse.next();
+  }
+
   // Role-based route protection
   if (pathname.startsWith("/admin") && !["ADMIN", "OWNER", "SUPER_ADMIN"].includes(role)) {
     return NextResponse.redirect(new URL("/login", req.url));
