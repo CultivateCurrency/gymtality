@@ -30,19 +30,18 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  salePrice: number | null;
   stock: number;
   category: string;
   description: string;
   imageUrl: string | null;
-  isActive: boolean;
+  featured: boolean;
+  active: boolean;
   tenantId: string;
   _count: { orderItems: number };
 }
 
-interface ProductsResponse {
-  products: Product[];
-  pagination: { total: number; page: number; limit: number; totalPages: number };
-}
+// backend returns data: Product[] with meta pagination
 
 interface Donation {
   id: string;
@@ -89,7 +88,7 @@ function formatDate(iso: string) {
 export default function AdminCommercePage() {
   const [activeSection, setActiveSection] = useState<"products" | "orders" | "donations">("products");
 
-  const { data, loading, error, refetch: refetchProducts } = useApi<ProductsResponse>("/api/shop/products?limit=50");
+  const { data: products, loading, error, refetch: refetchProducts } = useApi<Product[]>("/api/shop/products?limit=50");
   const { data: ordersData, loading: ordersLoading, error: ordersError } = useApi<OrdersResponse>(
     activeSection === "orders" ? "/api/admin/orders?limit=50" : null
   );
@@ -98,12 +97,12 @@ export default function AdminCommercePage() {
   );
 
   const orders = ordersData?.orders ?? [];
-  const totalRevenue = data?.products.reduce((sum, p) => sum + p.price * p._count.orderItems, 0) ?? 0;
+  const totalRevenue = products.reduce((sum, p) => sum + p.price * p._count.orderItems, 0) ?? 0;
 
   // Product CRUD
   const [productModal, setProductModal] = useState(false);
   const [productEditing, setProductEditing] = useState<Product | null>(null);
-  const [productForm, setProductForm] = useState({ name: "", description: "", price: "", stock: "", category: "", imageUrl: "" });
+  const [productForm, setProductForm] = useState({ name: "", description: "", price: "", salePrice: "", stock: "", category: "", imageUrl: "", featured: false });
   const [productDeleteConfirm, setProductDeleteConfirm] = useState<string | null>(null);
   const [productSaving, setProductSaving] = useState(false);
 
@@ -113,9 +112,11 @@ export default function AdminCommercePage() {
       name: productForm.name,
       description: productForm.description || null,
       price: parseFloat(productForm.price) || 0,
+      salePrice: productForm.salePrice ? parseFloat(productForm.salePrice) : null,
       stock: parseInt(productForm.stock) || 0,
       category: productForm.category || null,
       imageUrl: productForm.imageUrl || null,
+      featured: productForm.featured,
     };
     if (productEditing) {
       await apiFetch(`/api/shop/products/${productEditing.id}`, { method: "PATCH", body: JSON.stringify(payload) });
@@ -234,7 +235,7 @@ export default function AdminCommercePage() {
                 Merchandise (Products For Sale)
               </CardTitle>
               <Button
-                onClick={() => { setProductEditing(null); setProductForm({ name: "", description: "", price: "", stock: "", category: "", imageUrl: "" }); setProductModal(true); }}
+                onClick={() => { setProductEditing(null); setProductForm({ name: "", description: "", price: "", salePrice: "", stock: "", category: "", imageUrl: "", featured: false }); setProductModal(true); }}
                 className="bg-orange-500 hover:bg-orange-600 text-white" size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />Add Product
@@ -262,7 +263,7 @@ export default function AdminCommercePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(data?.products ?? []).map((product) => {
+                    {(products ?? []).map((product) => {
                       const status = product.stock === 0 ? "Out of Stock" : product.stock < 20 ? "Low Stock" : "Active";
                       return (
                         <tr key={product.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition">
@@ -272,7 +273,16 @@ export default function AdminCommercePage() {
                               <p className="text-xs text-zinc-500">{product.category}</p>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-sm text-zinc-300">${product.price.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-sm text-zinc-300">
+                            {product.salePrice != null ? (
+                              <span>
+                                <span className="text-green-400 font-medium">${product.salePrice.toFixed(2)}</span>
+                                <span className="text-zinc-500 line-through ml-1 text-xs">${product.price.toFixed(2)}</span>
+                              </span>
+                            ) : (
+                              `$${product.price.toFixed(2)}`
+                            )}
+                          </td>
                           <td className="py-3 px-4 text-sm text-zinc-300">{product.stock}</td>
                           <td className="py-3 px-4 text-sm text-zinc-300">{product._count.orderItems}</td>
                           <td className="py-3 px-4">
@@ -290,7 +300,7 @@ export default function AdminCommercePage() {
                             <div className="flex items-center justify-end gap-2">
                               <Button
                                 variant="outline" size="sm"
-                                onClick={() => { setProductEditing(product); setProductForm({ name: product.name, description: product.description || "", price: String(product.price), stock: String(product.stock), category: product.category || "", imageUrl: product.imageUrl || "" }); setProductModal(true); }}
+                                onClick={() => { setProductEditing(product); setProductForm({ name: product.name, description: product.description || "", price: String(product.price), salePrice: product.salePrice ? String(product.salePrice) : "", stock: String(product.stock), category: product.category || "", imageUrl: product.imageUrl || "", featured: product.featured ?? false }); setProductModal(true); }}
                                 className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white"
                               >
                                 <Edit3 className="h-3 w-3" />
@@ -307,7 +317,7 @@ export default function AdminCommercePage() {
                         </tr>
                       );
                     })}
-                    {(data?.products ?? []).length === 0 && (
+                    {(products ?? []).length === 0 && (
                       <tr><td colSpan={6} className="py-12 text-center text-zinc-500">No products found.</td></tr>
                     )}
                   </tbody>
@@ -471,8 +481,20 @@ export default function AdminCommercePage() {
                 <Input type="number" step="0.01" className="bg-zinc-800 border-zinc-700 text-white mt-1" value={productForm.price} onChange={e => setProductForm({ ...productForm, price: e.target.value })} placeholder="29.99" />
               </div>
               <div>
+                <Label>Sale Price ($)</Label>
+                <Input type="number" step="0.01" className="bg-zinc-800 border-zinc-700 text-white mt-1" value={productForm.salePrice} onChange={e => setProductForm({ ...productForm, salePrice: e.target.value })} placeholder="Optional" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label>Stock *</Label>
                 <Input type="number" className="bg-zinc-800 border-zinc-700 text-white mt-1" value={productForm.stock} onChange={e => setProductForm({ ...productForm, stock: e.target.value })} placeholder="100" />
+              </div>
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={productForm.featured} onChange={e => setProductForm({ ...productForm, featured: e.target.checked })} className="accent-orange-500 h-4 w-4" />
+                  <span className="text-zinc-300 text-sm">Featured product</span>
+                </label>
               </div>
             </div>
             <div>
