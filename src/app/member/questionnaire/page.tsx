@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -51,11 +52,13 @@ export default function QuestionnairePage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({
     age: "",
     gender: "",
     dob: "",
-    height: "",
+    heightFt: "5",
+    heightIn: "10",
     weight: "",
     activityLevel: "",
     goals: [] as string[],
@@ -85,27 +88,34 @@ export default function QuestionnairePage() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    setSubmitError(null);
     try {
+      const age = parseInt(form.age);
+      const heightCm = (parseFloat(form.heightFt || "0") * 12 + parseFloat(form.heightIn || "0")) * 2.54;
+      const weight = parseFloat(form.weight);
+
+      const payload: Record<string, unknown> = {
+        activityLevel: form.activityLevel,
+        goals: form.goals,
+        dietPreference: form.dietPreference,
+        medicalConsiderations: form.medicalConsiderations,
+        equipmentAccess: form.equipmentAccess,
+        injuryFlags: form.injuryFlags.filter((i) => i !== "None"),
+        preferredDays: form.preferredDays,
+      };
+      if (form.gender) payload.gender = form.gender;
+      if (form.dob) payload.dob = form.dob;
+      if (!isNaN(age)) payload.age = age;
+      if (heightCm > 0 && !isNaN(heightCm)) payload.height = heightCm;
+      if (!isNaN(weight) && weight > 0) payload.weight = weight;
+
       await apiFetch("/api/users/profile", {
         method: "PATCH",
-        body: JSON.stringify({
-          age: parseInt(form.age),
-          gender: form.gender,
-          dob: form.dob,
-          height: parseFloat(form.height),
-          weight: parseFloat(form.weight),
-          activityLevel: form.activityLevel,
-          goals: form.goals,
-          dietPreference: form.dietPreference,
-          medicalConsiderations: form.medicalConsiderations,
-          equipmentAccess: form.equipmentAccess,
-          injuryFlags: form.injuryFlags.filter((i) => i !== "None"),
-          preferredDays: form.preferredDays,
-        }),
+        body: JSON.stringify(payload),
       });
       router.push("/member/dashboard");
-    } catch (error) {
-      console.error("Questionnaire error:", error);
+    } catch (error: any) {
+      setSubmitError(error.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -190,14 +200,40 @@ export default function QuestionnairePage() {
           {step === 1 && (
             <>
               <div className="space-y-2">
-                <Label className="text-zinc-300">Height (cm)</Label>
-                <Input
-                  type="number"
-                  value={form.height}
-                  onChange={(e) => updateField("height", e.target.value)}
-                  placeholder="175"
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
+                <Label className="text-zinc-300">Height</Label>
+                <div className="flex gap-3">
+                  <div className="flex-1 space-y-1">
+                    <p className="text-xs text-zinc-500">Feet</p>
+                    <Select value={form.heightFt} onValueChange={(v) => updateField("heightFt", v)}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                        <SelectValue placeholder="ft" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-800 border-zinc-700">
+                        {[3, 4, 5, 6, 7, 8].map((ft) => (
+                          <SelectItem key={ft} value={String(ft)} className="text-white focus:bg-zinc-700">
+                            {ft} ft
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-xs text-zinc-500">Inches</p>
+                    <Select value={form.heightIn} onValueChange={(v) => updateField("heightIn", v)}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                        <SelectValue placeholder="in" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-800 border-zinc-700">
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)} className="text-white focus:bg-zinc-700">
+                            {i} in
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500">e.g. 5 ft 10 in</p>
               </div>
               <div className="space-y-2">
                 <Label className="text-zinc-300">Weight (kg)</Label>
@@ -361,6 +397,11 @@ export default function QuestionnairePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Submit Error */}
+      {submitError && (
+        <p className="mt-4 text-sm text-red-400 text-center">{submitError}</p>
+      )}
 
       {/* Navigation Buttons */}
       <div className="flex justify-between mt-6">

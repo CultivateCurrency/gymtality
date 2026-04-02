@@ -2,6 +2,31 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+function getToken(): string | null {
+  try {
+    const raw = localStorage.getItem("gymtality-auth");
+    if (!raw) return null;
+    return JSON.parse(raw)?.state?.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function backendFetch(path: string, options?: RequestInit) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
+    ...options,
+  });
+  return res.json();
+}
+
 interface QBSession {
   token: string;
   qbUserId: number;
@@ -48,13 +73,17 @@ export function useQuickBlox() {
   const [activeDialogId, setActiveDialogId] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize QB session
+  // Initialize QB session — register first (idempotent), then get session token
   const initSession = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/messages/session", { method: "POST" });
-      const json = await res.json();
+
+      // Register user in QB (safe to call multiple times)
+      await backendFetch("/api/messages/register", { method: "POST" });
+
+      // Get session token
+      const json = await backendFetch("/api/messages/session");
       if (!json.success) throw new Error(json.error);
       setSession(json.data);
       return json.data as QBSession;
@@ -67,73 +96,50 @@ export function useQuickBlox() {
   }, []);
 
   // Fetch dialogs
-  const fetchDialogs = useCallback(async (token?: string) => {
-    const qbToken = token || session?.token;
-    if (!qbToken) return;
+  const fetchDialogs = useCallback(async () => {
     try {
-      const res = await fetch("/api/messages/dialogs", {
-        headers: { "x-qb-token": qbToken },
-      });
-      const json = await res.json();
-      if (json.success) setDialogs(json.data);
+      const json = await backendFetch("/api/messages/");
+      if (json.success) setDialogs(json.data ?? []);
     } catch (e) {
       console.error("Failed to fetch dialogs:", e);
     }
-  }, [session?.token]);
+  }, []);
 
   // Fetch messages for a dialog
-  const fetchMessages = useCallback(async (dialogId: string, token?: string) => {
-    const qbToken = token || session?.token;
-    if (!qbToken) return;
+  const fetchMessages = useCallback(async (dialogId: string) => {
     try {
-      const res = await fetch(`/api/messages/chat?dialogId=${dialogId}`, {
-        headers: { "x-qb-token": qbToken },
-      });
-      const json = await res.json();
-      if (json.success) setMessages(json.data);
+      const json = await backendFetch(`/api/messages/rooms/${dialogId}/messages`);
+      if (json.success) setMessages(json.data ?? []);
     } catch (e) {
       console.error("Failed to fetch messages:", e);
     }
-  }, [session?.token]);
+  }, []);
 
   // Send a message
-  const sendMessage = useCallback(async (dialogId: string, message: string, recipientId: number) => {
-    if (!session?.token) return;
+  const sendMessage = useCallback(async (dialogId: string, message: string, _recipientId: number) => {
     try {
-      const res = await fetch("/api/messages/chat", {
+      const json = await backendFetch(`/api/messages/rooms/${dialogId}/messages`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-qb-token": session.token,
-        },
-        body: JSON.stringify({ dialogId, message, recipientId }),
+        body: JSON.stringify({ message }),
       });
-      const json = await res.json();
       if (json.success) {
-        // Refresh messages after sending
         await fetchMessages(dialogId);
         await fetchDialogs();
       }
-      return json.success;
+      return json.success ?? false;
     } catch (e) {
       console.error("Failed to send message:", e);
       return false;
     }
-  }, [session?.token, fetchMessages, fetchDialogs]);
+  }, [fetchMessages, fetchDialogs]);
 
-  // Create a new dialog with a user
-  const createDialog = useCallback(async (occupantId: number, name: string) => {
-    if (!session?.token) return null;
+  // Create a new 1-to-1 dialog
+  const createDialog = useCallback(async (occupantQbId: number, name: string) => {
     try {
-      const res = await fetch("/api/messages/dialogs", {
+      const json = await backendFetch("/api/messages/room", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-qb-token": session.token,
-        },
-        body: JSON.stringify({ occupantId, name }),
+        body: JSON.stringify({ occupants_ids: [occupantQbId], name, type: 3 }),
       });
-      const json = await res.json();
       if (json.success) {
         await fetchDialogs();
         return json.data;
@@ -143,20 +149,19 @@ export function useQuickBlox() {
       console.error("Failed to create dialog:", e);
       return null;
     }
-  }, [session?.token, fetchDialogs]);
+  }, [fetchDialogs]);
 
   // Search users for new chat
   const searchUsers = useCallback(async (query: string) => {
     try {
-      const res = await fetch(`/api/messages/users?q=${encodeURIComponent(query)}`);
-      const json = await res.json();
-      if (json.success) setUsers(json.data);
+      const json = await backendFetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+      if (json.success) setUsers(json.data ?? []);
     } catch (e) {
       console.error("Failed to search users:", e);
     }
   }, []);
 
-  // Select a dialog
+  // Select a dialog and load its messages
   const selectDialog = useCallback(async (dialogId: string) => {
     setActiveDialogId(dialogId);
     await fetchMessages(dialogId);
@@ -168,7 +173,7 @@ export function useQuickBlox() {
     (async () => {
       const sess = await initSession();
       if (sess && mounted) {
-        await fetchDialogs(sess.token);
+        await fetchDialogs();
       }
     })();
     return () => { mounted = false; };
@@ -177,7 +182,7 @@ export function useQuickBlox() {
   // Poll for new messages every 5s when a dialog is active
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current);
-    if (activeDialogId && session?.token) {
+    if (activeDialogId && session) {
       pollRef.current = setInterval(() => {
         fetchMessages(activeDialogId);
         fetchDialogs();
@@ -186,7 +191,7 @@ export function useQuickBlox() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [activeDialogId, session?.token, fetchMessages, fetchDialogs]);
+  }, [activeDialogId, session, fetchMessages, fetchDialogs]);
 
   return {
     session,

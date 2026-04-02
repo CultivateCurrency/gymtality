@@ -97,7 +97,7 @@ export default function AdminCommercePage() {
   );
 
   const orders = ordersData?.orders ?? [];
-  const totalRevenue = products.reduce((sum, p) => sum + p.price * p._count.orderItems, 0) ?? 0;
+  const totalRevenue = (products ?? []).reduce((sum, p) => sum + p.price * p._count.orderItems, 0);
 
   // Product CRUD
   const [productModal, setProductModal] = useState(false);
@@ -184,7 +184,7 @@ export default function AdminCommercePage() {
                 <ShoppingBag className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{data?.pagination.total ?? 0}</p>
+                <p className="text-2xl font-bold text-white">{products?.length ?? 0}</p>
                 <p className="text-sm text-zinc-400">Active Products</p>
               </div>
             </div>
