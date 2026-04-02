@@ -138,7 +138,7 @@ export function TopHeader({ variant }: TopHeaderProps) {
 
         {/* Notifications */}
         <Link
-          href={`/${variant}/settings`}
+          href={`/${variant}/notifications`}
           className="relative w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         >
