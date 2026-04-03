@@ -32,6 +32,7 @@ import {
   Save,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 interface TenantSettings {
   id: string;
@@ -159,6 +160,7 @@ export default function AdminSettingsPage() {
                     variant="outline"
                     size="sm"
                     className="mt-2 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    onClick={() => toast.info("Logo upload — add your logo URL in Platform Name settings below")}
                   >
                     <Upload className="h-3 w-3 mr-2" />
                     Upload Logo
@@ -305,6 +307,7 @@ export default function AdminSettingsPage() {
               variant="outline"
               size="sm"
               className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              onClick={() => toast.info("Custom roles are managed at the platform level. Contact support to add new roles.")}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Role
@@ -339,6 +342,7 @@ export default function AdminSettingsPage() {
                     variant="outline"
                     size="sm"
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    onClick={() => toast.info(`${role.name} role permissions are managed at the platform level.`)}
                   >
                     <Edit3 className="h-3 w-3" />
                   </Button>
@@ -378,6 +382,7 @@ export default function AdminSettingsPage() {
               variant="outline"
               size="sm"
               className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+              onClick={() => window.open("https://dashboard.stripe.com", "_blank")}
             >
               <ExternalLink className="h-3 w-3 mr-2" />
               Stripe Dashboard
@@ -548,6 +553,7 @@ export default function AdminSettingsPage() {
                     variant="outline"
                     size="sm"
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    onClick={() => toast.info(`${role.name} role permissions are managed at the platform level.`)}
                   >
                     <Edit3 className="h-3 w-3" />
                   </Button>

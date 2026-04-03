@@ -74,9 +74,7 @@ function getNotificationIcon(type: string) {
 export default function CoachNotificationsPage() {
   const { user } = useAuthStore();
   const { data: notifications, loading, error, refetch } =
-    useApi<NotificationItem[]>(
-      user ? "/api/coach/notifications" : null
-    );
+    useApi<NotificationItem[]>(user ? "/api/notifications" : null);
   const [filter, setFilter] = useState<string>("ALL");
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -86,12 +84,10 @@ export default function CoachNotificationsPage() {
   const unreadCount = items.filter((n) => !n.read).length;
 
   const handleToggleRead = async (id: string, currentRead: boolean) => {
+    if (currentRead) return; // already read, no action needed
     setTogglingId(id);
     try {
-      await apiFetch(`/api/coach/notifications`, {
-        method: "PUT",
-        body: JSON.stringify({ id, read: !currentRead }),
-      });
+      await apiFetch(`/api/notifications/${id}/read`, { method: "PATCH" });
       refetch();
     } catch (err: any) {
       toast.error(err?.message || "Failed to update notification");
@@ -102,11 +98,9 @@ export default function CoachNotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      await apiFetch(`/api/coach/notifications`, {
-        method: "PUT",
-        body: JSON.stringify({ markAllRead: true }),
-      });
+      await apiFetch(`/api/notifications/read-all`, { method: "PATCH" });
       refetch();
+      toast.success("All notifications marked as read");
     } catch (err: any) {
       toast.error(err?.message || "Failed to mark all as read");
     }

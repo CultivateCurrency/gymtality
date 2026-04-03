@@ -79,6 +79,7 @@ export default function AdminCoachesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<CoachProfile | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [viewingCoach, setViewingCoach] = useState<CoachProfile | null>(null);
 
   const {
     data: pendingData,
@@ -299,6 +300,7 @@ export default function AdminCoachesPage() {
                   size="sm"
                   variant="outline"
                   className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  onClick={() => setViewingCoach(coach)}
                 >
                   <FileText className="h-4 w-4 mr-1" />
                   View Full Application
@@ -467,6 +469,62 @@ export default function AdminCoachesPage() {
               {deleteLoading ? 'Deleting...' : 'Delete Account'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Full Application Modal */}
+      <Dialog open={!!viewingCoach} onOpenChange={() => setViewingCoach(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Coach Application</DialogTitle>
+          </DialogHeader>
+          {viewingCoach && (
+            <div className="space-y-4 pt-1">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-lg font-bold text-amber-400">
+                  {getInitials(viewingCoach.user.fullName)}
+                </div>
+                <div>
+                  <p className="font-semibold text-white">{viewingCoach.user.fullName}</p>
+                  <p className="text-sm text-zinc-400">{viewingCoach.user.email}</p>
+                  <p className="text-xs text-zinc-500">@{viewingCoach.user.username}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-zinc-800 rounded-lg p-3">
+                  <p className="text-zinc-500 text-xs mb-1">Category</p>
+                  <p className="text-white font-medium">{viewingCoach.category ?? "Not specified"}</p>
+                </div>
+                <div className="bg-zinc-800 rounded-lg p-3">
+                  <p className="text-zinc-500 text-xs mb-1">Applied</p>
+                  <p className="text-white font-medium">{formatDate(viewingCoach.createdAt)}</p>
+                </div>
+              </div>
+              {viewingCoach.bio && (
+                <div className="bg-zinc-800 rounded-lg p-3">
+                  <p className="text-zinc-500 text-xs mb-1">Bio</p>
+                  <p className="text-zinc-300 text-sm leading-relaxed">{viewingCoach.bio}</p>
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  disabled={mutating}
+                  onClick={() => { handleApprove(viewingCoach); setViewingCoach(null); }}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Approve
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-red-500/40 text-red-400 hover:bg-red-500/10"
+                  disabled={mutating}
+                  onClick={() => { handleDeny(viewingCoach); setViewingCoach(null); }}
+                >
+                  <XCircle className="h-4 w-4 mr-2" /> Deny
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

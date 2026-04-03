@@ -213,7 +213,9 @@ export default function CommunityPage() {
     try {
       const data = await apiFetch<Comment[]>(`/api/community/posts/${postId}/comments`);
       setComments((prev) => ({ ...prev, [postId]: data || [] }));
-    } catch {}
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load comments");
+    }
     setLoadingComments(null);
   };
 

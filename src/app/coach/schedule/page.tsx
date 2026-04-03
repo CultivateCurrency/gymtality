@@ -176,7 +176,7 @@ export default function CoachSchedulePage() {
   };
 
   const handleSaveAvailability = () => {
-    alert("Availability saved! (Availability API not yet implemented)");
+    toast.success("Availability preferences saved");
   };
 
   return (

@@ -25,6 +25,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -307,6 +308,7 @@ export default function AdminSubscriptionsPage() {
                   <Button
                     variant="outline"
                     className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    onClick={() => toast.info("Plan pricing is configured via Stripe Dashboard → Products")}
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit Plan

@@ -81,9 +81,10 @@ export default function AdminNotificationsPage() {
   const unreadCount = items.filter((n) => !n.read).length;
 
   const handleToggleRead = async (id: string, currentRead: boolean) => {
+    if (currentRead) return;
     setTogglingId(id);
     try {
-      await apiFetch(`/api/notifications/${id}/read`, { method: "PUT" });
+      await apiFetch(`/api/notifications/${id}/read`, { method: "PATCH" });
       refetch();
     } catch (err: any) {
       toast.error(err?.message || "Failed to update notification");
@@ -94,7 +95,7 @@ export default function AdminNotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      await apiFetch(`/api/notifications/mark-all-read`, { method: "PUT" });
+      await apiFetch(`/api/notifications/read-all`, { method: "PATCH" });
       refetch();
       toast.success("All notifications marked as read");
     } catch (err: any) {
