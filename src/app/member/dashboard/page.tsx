@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Target,
   Zap,
+  CreditCard,
   Medal,
   UtensilsCrossed,
   Star,
@@ -98,6 +99,7 @@ export default function MemberDashboard() {
   const { user } = useAuthStore();
 
   const { data: sessions, loading: sessionsLoading } = useApi<Session[]>("/api/workouts/sessions?limit=100");
+  const { data: subscriptionData } = useApi<{ plan: string; status: string } | null>("/api/payments/subscription");
   const { data: eventsData, loading: eventsLoading } = useApi<EventsResponse>("/api/events?upcoming=true&limit=3");
   const { data: streamsData } = useApi<StreamsResponse>("/api/streaming?status=LIVE&limit=1");
   const { data: goalsData, loading: goalsLoading } = useApi<{ goals: Goal[] }>("/api/workouts/goals?limit=3");
@@ -156,7 +158,7 @@ export default function MemberDashboard() {
           <div>
             <p className="text-zinc-500 text-xs">{today}</p>
             <h1 className="text-2xl md:text-3xl font-bold text-white mt-1">
-              Welcome back, {userName} 👋
+              Welcome back, {userName}
             </h1>
             <p className="text-zinc-400 mt-1 text-sm">
               {stats.streak > 0
@@ -212,6 +214,25 @@ export default function MemberDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* ── Subscription upgrade banner (only shown when no active sub) ── */}
+      {subscriptionData === null && (
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-orange-500/15 to-zinc-900 border border-orange-500/20">
+          <div className="p-2.5 rounded-xl bg-orange-500/20 shrink-0">
+            <CreditCard size={18} className="text-orange-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">Unlock the full Gymtality experience</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Get unlimited workouts, live streaming, coaching & more with a membership plan.</p>
+          </div>
+          <Link href="/member/settings" className="shrink-0">
+            <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white gap-1.5">
+              <Zap size={13} />
+              Upgrade
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* ── Two-column: Goals + Events ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
