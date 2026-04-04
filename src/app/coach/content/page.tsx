@@ -42,7 +42,7 @@ const categories = [
   { label: "Yoga", icon: Leaf },
   { label: "Healthy Foods", icon: Apple },
   { label: "Books", icon: BookOpen },
-  { label: "Psychiatrist", icon: Stethoscope },
+  { label: "Mindset", icon: Stethoscope },
 ];
 
 const difficultyLevels = ["Beginner", "Intermediate", "Advanced", "Expert"];

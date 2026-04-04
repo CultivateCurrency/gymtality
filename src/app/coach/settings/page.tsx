@@ -48,7 +48,7 @@ const coachCategories = [
   "Meditation",
   "Yoga",
   "Nutritionist",
-  "Psychiatrist",
+  "Mindset",
   "Strength Coach",
   "Cardio Specialist",
 ];
