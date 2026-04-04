@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
 
-const FILTERS = ["All", "Home", "Gym", "Strength", "Cardio", "Yoga", "Meditation"];
+const FILTERS = ["All", "Home", "Gym", "Strength", "Cardio", "Yoga", "Meditation", "Mentality"];
 const BODY_PARTS = ["Chest", "Back", "Legs", "Arms", "Core", "Shoulders", "Full Body"];
 
 interface WorkoutsResponse {

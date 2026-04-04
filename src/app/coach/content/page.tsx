@@ -37,6 +37,7 @@ import {
 
 const categories = [
   { label: "Workouts", icon: Dumbbell },
+  { label: "Mentality", icon: Brain },
   { label: "Meditation", icon: Brain },
   { label: "Yoga", icon: Leaf },
   { label: "Healthy Foods", icon: Apple },
