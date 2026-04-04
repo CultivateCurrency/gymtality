@@ -52,6 +52,21 @@ interface CoachProfile {
   user: CoachUser;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  WORKOUT_TRAINER: "Workout Trainer",
+  MEDITATION: "Meditation",
+  YOGA: "Yoga",
+  HEALTHY_FOODS: "Healthy Foods",
+  BOOKS: "Books",
+  PSYCHIATRIST: "Mindset",
+  MINDSET: "Mindset",
+};
+
+function formatCategory(cat: string | null): string {
+  if (!cat) return "Uncategorized";
+  return CATEGORY_LABELS[cat] ?? cat;
+}
+
 interface CoachesResponse {
   coaches: CoachProfile[];
   pagination: {
@@ -244,7 +259,7 @@ export default function AdminCoachesPage() {
                     <h4 className="font-medium text-white">{coach.user.fullName}</h4>
                     <p className="text-xs text-zinc-400">{coach.user.email}</p>
                     <Badge className="mt-1 bg-zinc-800 text-zinc-300 border-zinc-700 text-[10px]">
-                      {coach.category ?? "Uncategorized"}
+                      {formatCategory(coach.category)}
                     </Badge>
                   </div>
                 </div>
@@ -387,7 +402,7 @@ export default function AdminCoachesPage() {
                       </td>
                       <td className="py-3 px-4">
                         <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
-                          {coach.category ?? "Uncategorized"}
+                          {formatCategory(coach.category)}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
@@ -493,7 +508,7 @@ export default function AdminCoachesPage() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-zinc-800 rounded-lg p-3">
                   <p className="text-zinc-500 text-xs mb-1">Category</p>
-                  <p className="text-white font-medium">{viewingCoach.category ?? "Not specified"}</p>
+                  <p className="text-white font-medium">{formatCategory(viewingCoach.category)}</p>
                 </div>
                 <div className="bg-zinc-800 rounded-lg p-3">
                   <p className="text-zinc-500 text-xs mb-1">Applied</p>
