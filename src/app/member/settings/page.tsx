@@ -317,6 +317,15 @@ function SettingsContent() {
     }
   }, [searchParams]);
 
+  // Auto-scroll to subscription section when ?section=subscription
+  useEffect(() => {
+    if (searchParams.get("section") === "subscription") {
+      setTimeout(() => {
+        document.getElementById("subscription")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [searchParams]);
+
   const currentPlan = subData?.plan || null;
   const subStatus = subData?.status;
 

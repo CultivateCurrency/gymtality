@@ -225,7 +225,7 @@ export default function MemberDashboard() {
             <p className="text-sm font-semibold text-white">Unlock the full Gymtality experience</p>
             <p className="text-xs text-zinc-400 mt-0.5">Get unlimited workouts, live streaming, coaching & more with a membership plan.</p>
           </div>
-          <Link href="/member/settings#subscription" className="shrink-0">
+          <Link href="/member/settings?section=subscription" className="shrink-0">
             <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white gap-1.5">
               <Zap size={13} />
               Upgrade
