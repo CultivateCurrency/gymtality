@@ -8,7 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Search,
   Send,
@@ -148,15 +147,29 @@ export default function MessagesPage() {
 
   // Error state
   if (error) {
+    const isNotConfigured = error.toLowerCase().includes("not configured") || error.toLowerCase().includes("not set up");
     return (
       <div className="max-w-7xl mx-auto flex items-center justify-center h-[calc(100vh-7rem)]">
         <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 max-w-sm space-y-3 text-center">
-          <Info className="h-8 w-8 text-orange-500 mx-auto" />
-          <h3 className="font-semibold text-white">Chat Unavailable</h3>
-          <p className="text-sm text-zinc-400">{error}</p>
-          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-            Check QuickBlox Configuration
-          </Badge>
+          <MessageSquare className="h-8 w-8 text-orange-500 mx-auto" />
+          <h3 className="font-semibold text-white">
+            {isNotConfigured ? "Chat Coming Soon" : "Chat Temporarily Unavailable"}
+          </h3>
+          <p className="text-sm text-zinc-400">
+            {isNotConfigured
+              ? "Direct messaging is being set up. Check back soon!"
+              : "We're having trouble connecting to chat. Please try again in a moment."}
+          </p>
+          {!isNotConfigured && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          )}
         </div>
       </div>
     );

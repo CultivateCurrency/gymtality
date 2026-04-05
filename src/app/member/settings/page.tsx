@@ -672,7 +672,7 @@ function SettingsContent() {
       </Card>
 
       {/* Subscription */}
-      <Card className="bg-zinc-900 border-zinc-800">
+      <Card id="subscription" className="bg-zinc-900 border-zinc-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-orange-500" />
