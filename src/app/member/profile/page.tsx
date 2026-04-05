@@ -277,7 +277,7 @@ export default function ProfilePage() {
                       {workout.plan?.name || "Workout Session"}
                     </h3>
                     <p className="text-sm text-zinc-400">
-                      {workout.duration} min &middot; Forge Score: {workout.forgeScore}
+                      {workout.duration} min &middot; Gymtality Score: {workout.forgeScore}
                     </p>
                   </div>
                   <span className="text-xs text-zinc-500">{formatDate(workout.createdAt)}</span>

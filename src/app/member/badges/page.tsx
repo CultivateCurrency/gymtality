@@ -40,9 +40,9 @@ const BADGES = [
   { id: "five-events", name: "Regular", desc: "Attend 5 events", icon: Calendar, color: "teal", requirement: (s: UserStats) => s.eventsAttended >= 5 },
   { id: "first-post", name: "Voice Heard", desc: "Create your first community post", icon: Users, color: "indigo", requirement: (s: UserStats) => s.postsCreated >= 1 },
   { id: "first-goal", name: "Goal Setter", desc: "Complete your first goal", icon: Target, color: "emerald", requirement: (s: UserStats) => s.goalsCompleted >= 1 },
-  { id: "points-100", name: "Rising Star", desc: "Earn 100 Forge Points", icon: Zap, color: "blue", requirement: (s: UserStats) => s.totalPoints >= 100 },
-  { id: "points-500", name: "All-Star", desc: "Earn 500 Forge Points", icon: Star, color: "purple", requirement: (s: UserStats) => s.totalPoints >= 500 },
-  { id: "points-1000", name: "Legend", desc: "Earn 1,000 Forge Points", icon: Award, color: "orange", requirement: (s: UserStats) => s.totalPoints >= 1000 },
+  { id: "points-100", name: "Rising Star", desc: "Earn 100 Gymtality Points", icon: Zap, color: "blue", requirement: (s: UserStats) => s.totalPoints >= 100 },
+  { id: "points-500", name: "All-Star", desc: "Earn 500 Gymtality Points", icon: Star, color: "purple", requirement: (s: UserStats) => s.totalPoints >= 500 },
+  { id: "points-1000", name: "Legend", desc: "Earn 1,000 Gymtality Points", icon: Award, color: "orange", requirement: (s: UserStats) => s.totalPoints >= 1000 },
   { id: "community-lover", name: "Community Lover", desc: "Create 10 posts", icon: Heart, color: "pink", requirement: (s: UserStats) => s.postsCreated >= 10 },
 ];
 
