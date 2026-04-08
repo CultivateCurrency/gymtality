@@ -23,22 +23,25 @@ function CallbackHandler() {
       return;
     }
 
+    const role = params.get("role") ?? "MEMBER";
     const user = {
       id: params.get("userId") ?? "",
-      role: params.get("role") ?? "MEMBER",
+      role,
       fullName: params.get("fullName") ?? "",
       email: params.get("email") ?? "",
       username: params.get("username") ?? "",
       profilePhoto: params.get("profilePhoto") ?? null,
-      tenantId: "",
-      emailVerified: true,
+      tenantId: params.get("tenantId") ?? "",
     };
 
     login(user as any, accessToken, refreshToken);
 
-    if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
+    const next = params.get("next");
+    if (next && next.startsWith("/") && next !== "/") {
+      router.replace(next);
+    } else if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(role)) {
       router.replace("/admin/dashboard");
-    } else if (user.role === "COACH") {
+    } else if (role === "COACH") {
       router.replace("/coach/dashboard");
     } else {
       router.replace("/member/dashboard");
