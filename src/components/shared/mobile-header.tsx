@@ -123,7 +123,7 @@ export function MobileHeader({ variant }: { variant: "member" | "coach" | "admin
         </button>
 
         {/* Logo */}
-        <Link href={`/${variant}/dashboard`} className="flex items-center gap-1.5">
+        <Link href="/" className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center">
             <Dumbbell size={12} className="text-white" />
           </div>
@@ -166,12 +166,12 @@ export function MobileHeader({ variant }: { variant: "member" | "coach" | "admin
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-zinc-800/60">
-          <div className="flex items-center gap-2">
+          <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center">
-            <Dumbbell size={14} className="text-white" />
-          </div>
+              <Dumbbell size={14} className="text-white" />
+            </div>
             <span className="text-sm font-black text-white">GYMTALITY</span>
-          </div>
+          </Link>
           <button
             onClick={() => setDrawerOpen(false)}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
