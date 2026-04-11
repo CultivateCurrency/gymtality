@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Home } from "lucide-react";
 import { Sidebar } from "@/components/shared/sidebar";
 import { TopHeader } from "@/components/shared/top-header";
 import { BottomNav } from "@/components/shared/bottom-nav";
@@ -18,6 +19,15 @@ export default function MemberLayout({
 
   return (
     <div className="min-h-screen bg-zinc-950">
+      {/* Home button — top left corner */}
+      <Link
+        href="/member/dashboard"
+        className="fixed top-4 left-4 z-40 md:hidden p-2 rounded-lg hover:bg-zinc-800 transition-colors"
+        title="Go to dashboard"
+      >
+        <Home className="h-6 w-6 text-orange-500" />
+      </Link>
+
       {/* Guest banner */}
       {isGuest && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white text-center text-[13px] font-medium py-2 px-4 flex items-center justify-center gap-3">
