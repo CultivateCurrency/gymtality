@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { AudioRotationPlayer } from "@/components/landing/audio-rotation-player";
 
 const rotatingWords = ["Strength", "Discipline", "Focus", "Clarity", "Consistency"];
 
@@ -83,6 +84,11 @@ export default function WelcomePage() {
           </Link>
         </p>
       </main>
+
+      {/* Audio Rotation Player */}
+      <div className="relative z-10 absolute bottom-24 left-0 right-0 px-6 max-w-2xl mx-auto w-full">
+        <AudioRotationPlayer />
+      </div>
 
       {/* Footer */}
       <footer className="relative z-10 absolute bottom-0 left-0 right-0 pb-7 flex items-center justify-center gap-5 text-[11px] text-zinc-700">
