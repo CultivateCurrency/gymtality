@@ -237,24 +237,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Profile Photo — placeholder for S3 upload */}
-          <div className="space-y-2">
-            <Label className="text-zinc-300">Profile Photo (optional)</Label>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-500 text-xs">
-                Photo
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-              >
-                Upload
-              </Button>
-            </div>
-          </div>
-
           {/* Terms */}
           <label className="flex items-start gap-2 cursor-pointer">
             <input
