@@ -8,7 +8,11 @@ interface RotationTrack {
   type: "theme" | "paid";
   songName: string;
   artistName: string;
-  audioUrl: string;
+  audioUrl?: string; // for uploads
+  spotifyTrackUri?: string; // for Spotify
+  spotifyPreviewUrl?: string; // Spotify preview
+  spotifyCoverImage?: string; // album art
+  source?: "spotify" | "upload"; // data source
 }
 
 interface RotationResponse {
@@ -37,16 +41,36 @@ export function AudioRotationPlayer() {
     if (queue.length === 0) return;
 
     const playTrack = async () => {
-      if (audioRef.current) {
-        audioRef.current.src = queue[currentIndex].audioUrl;
-        audioRef.current.muted = isMuted;
-        audioRef.current.volume = 0.5;
-        try {
-          await audioRef.current.play();
-          setIsPlaying(true);
-        } catch (err) {
-          console.error("Failed to play audio:", err);
-        }
+      const track = queue[currentIndex];
+      if (!audioRef.current) return;
+
+      // Determine audio URL based on source
+      let audioUrl: string | null = null;
+
+      if (track.source === "spotify" && track.spotifyPreviewUrl) {
+        // Spotify preview (30s, works without premium)
+        audioUrl = track.spotifyPreviewUrl;
+      } else if (track.source === "upload" && track.audioUrl) {
+        // Uploaded audio file
+        audioUrl = track.audioUrl;
+      } else if (track.audioUrl) {
+        // Fallback for theme song or legacy tracks
+        audioUrl = track.audioUrl;
+      }
+
+      if (!audioUrl) {
+        console.warn("No audio URL for track:", track.songName);
+        return;
+      }
+
+      audioRef.current.src = audioUrl;
+      audioRef.current.muted = isMuted;
+      audioRef.current.volume = 0.5;
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (err) {
+        console.error("Failed to play audio:", err);
       }
     };
 
@@ -101,6 +125,17 @@ export function AudioRotationPlayer() {
       <audio ref={audioRef} />
 
       <div className="flex items-center justify-between gap-4">
+        {/* Album Art */}
+        {currentTrack.spotifyCoverImage && (
+          <div className="flex-shrink-0">
+            <img
+              src={currentTrack.spotifyCoverImage}
+              alt={currentTrack.songName}
+              className="w-12 h-12 rounded-lg object-cover"
+            />
+          </div>
+        )}
+
         {/* Now Playing Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
