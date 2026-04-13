@@ -52,32 +52,27 @@ declare global {
 export default function LandingAudioBookingPage() {
   const router = useRouter();
   const { upload, uploading, progress, error: uploadError } = useUpload();
-  const { data: bookingsData } = useApi<BookingStatusResponse>("/api/landing/bookings/mine");
+  const { data: bookingsData, loading: bookingsLoading } = useApi<BookingStatusResponse>("/api/landing/bookings/mine");
   const { mutate: createBooking, loading: bookingLoading } = useMutation<BookingResponse>("/api/landing/bookings", "POST");
 
+  // Form state
   const [bookingMode, setBookingMode] = useState<"spotify" | "upload">("spotify");
   const [form, setForm] = useState({
     songName: "",
     artistName: "",
     bookingDate: "",
   });
-
-  // Spotify state
   const [spotifyTrack, setSpotifyTrack] = useState<SpotifyTrack | null>(null);
   const [spotifyQuery, setSpotifyQuery] = useState("");
   const [spotifyResults, setSpotifyResults] = useState<SpotifyTrack[]>([]);
   const [searchingSpotify, setSearchingSpotify] = useState(false);
-
-  // Upload state
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState("");
   const [audioKey, setAudioKey] = useState("");
-
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
 
-  // Spotify search handler
   const handleSpotifySearch = async () => {
     if (!spotifyQuery.trim()) return;
     setSearchingSpotify(true);
@@ -200,32 +195,55 @@ export default function LandingAudioBookingPage() {
       }
 
       // Load Stripe and confirm payment
+      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+      if (!stripeKey) {
+        setError("Stripe configuration missing");
+        setProcessing(false);
+        return;
+      }
+
       const script = document.createElement("script");
       script.src = "https://js.stripe.com/v3/";
+      script.async = true;
       script.onload = async () => {
-        const stripe = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
-        const { error: stripeError } = await stripe.confirmCardPayment(bookingResponse.clientSecret, {
-          payment_method: {
-            card: {
-              token: "tok_visa", // In production, use Stripe Elements
-            },
-          },
-        });
+        try {
+          const stripe = window.Stripe(stripeKey);
+          if (!stripe) {
+            setError("Failed to initialize Stripe");
+            setProcessing(false);
+            return;
+          }
 
-        if (stripeError) {
-          setError(stripeError.message || "Payment failed");
-        } else {
-          toast.success("Booking created! Your song is pending review.");
-          setForm({ songName: "", artistName: "", bookingDate: "" });
-          setSpotifyTrack(null);
-          setSpotifyQuery("");
-          setAudioFile(null);
-          setAudioUrl("");
-          setAudioKey("");
-          setAgreedToTerms(false);
-          setBookingMode("spotify");
-          router.refresh();
+          const { error: stripeError } = await stripe.confirmCardPayment(bookingResponse.clientSecret, {
+            payment_method: {
+              card: {
+                token: "tok_visa",
+              },
+            },
+          });
+
+          if (stripeError) {
+            setError(stripeError.message || "Payment failed");
+          } else {
+            toast.success("Booking created! Your song is pending review.");
+            setForm({ songName: "", artistName: "", bookingDate: "" });
+            setSpotifyTrack(null);
+            setSpotifyQuery("");
+            setAudioFile(null);
+            setAudioUrl("");
+            setAudioKey("");
+            setAgreedToTerms(false);
+            setBookingMode("spotify");
+            router.refresh();
+          }
+        } catch (err: any) {
+          setError(err.message || "Payment processing failed");
+        } finally {
+          setProcessing(false);
         }
+      };
+      script.onerror = () => {
+        setError("Failed to load Stripe");
         setProcessing(false);
       };
       document.head.appendChild(script);
@@ -236,7 +254,7 @@ export default function LandingAudioBookingPage() {
     }
   };
 
-  const recentBookings = bookingsData?.bookings || [];
+  const recentBookings = bookingsLoading ? [] : (bookingsData?.bookings || []);
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
