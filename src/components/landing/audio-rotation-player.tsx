@@ -23,7 +23,7 @@ export function AudioRotationPlayer() {
   const { data: rotationData } = useApi<RotationResponse>("/api/landing/rotation");
   const [queue, setQueue] = useState<RotationTrack[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
