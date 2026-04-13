@@ -86,7 +86,7 @@ export default function WelcomePage() {
       </main>
 
       {/* Audio Rotation Player */}
-      <div className="relative z-10 absolute bottom-24 left-0 right-0 px-6 max-w-2xl mx-auto w-full">
+      <div className="relative z-10 absolute top-8 left-0 right-0 px-6 max-w-2xl mx-auto w-full">
         <AudioRotationPlayer />
       </div>
 
