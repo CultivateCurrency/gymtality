@@ -64,10 +64,13 @@ export function AudioRotationPlayer() {
       }
 
       audioRef.current.src = audioUrl;
-      audioRef.current.muted = isMuted;
       audioRef.current.volume = 0.5;
+
+      // Start muted to bypass autoplay restrictions, then unmute
+      audioRef.current.muted = true;
       try {
         await audioRef.current.play();
+        audioRef.current.muted = isMuted; // Apply actual mute state after playing starts
         setIsPlaying(true);
       } catch (err) {
         console.error("Failed to play audio:", err);
