@@ -190,18 +190,6 @@ export function RotationCalendar() {
             </p>
           </div>
 
-          {/* Book Button */}
-          {Math.max(0, capacity - booked) > 0 ? (
-            <a href="/member/landing-audio" className="block">
-              <button className="w-full mt-4 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors">
-                Book Your Song for {selectedDay.dayName.split(" ")[1]}
-              </button>
-            </a>
-          ) : (
-            <div className="w-full mt-4 py-2.5 px-4 bg-zinc-700 text-zinc-400 text-center rounded-lg cursor-not-allowed">
-              Fully Booked
-            </div>
-          )}
         </div>
       )}
 

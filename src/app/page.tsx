@@ -71,11 +71,6 @@ export default function WelcomePage() {
               <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </Link>
-          <Link href="/member/landing-audio" className="w-full">
-            <button className="w-full flex items-center justify-center gap-2 py-[14px] px-8 bg-zinc-800 hover:bg-zinc-700 text-orange-400 font-semibold text-[14px] rounded-xl transition-all duration-200 border border-orange-500/30">
-              💿 Book Your Song — $20/Day
-            </button>
-          </Link>
         </div>
 
         {/* Login link */}
