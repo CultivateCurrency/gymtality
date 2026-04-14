@@ -33,6 +33,9 @@ export function AudioRotationPlayer() {
   useEffect(() => {
     if (rotationData?.queue && rotationData.queue.length > 0) {
       setQueue(rotationData.queue);
+      console.log("Audio queue loaded:", rotationData.queue);
+    } else {
+      console.log("No queue data yet:", rotationData);
     }
   }, [rotationData]);
 
@@ -69,11 +72,13 @@ export function AudioRotationPlayer() {
       // Start muted to bypass autoplay restrictions, then unmute
       audioRef.current.muted = true;
       try {
+        console.log("Attempting to play:", audioUrl);
         await audioRef.current.play();
         audioRef.current.muted = isMuted; // Apply actual mute state after playing starts
         setIsPlaying(true);
+        console.log("Audio playing successfully");
       } catch (err) {
-        console.error("Failed to play audio:", err);
+        console.error("Failed to play audio:", err, { audioUrl, muted: isMuted });
       }
     };
 
@@ -125,7 +130,7 @@ export function AudioRotationPlayer() {
 
   return (
     <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 border border-zinc-700 rounded-lg p-4 shadow-lg">
-      <audio ref={audioRef} />
+      <audio ref={audioRef} autoPlay muted onError={(e) => console.error("Audio error:", e)} />
 
       <div className="flex items-center justify-between gap-4">
         {/* Album Art */}
