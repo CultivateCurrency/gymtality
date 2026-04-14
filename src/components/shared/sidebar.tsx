@@ -63,6 +63,7 @@ const memberNavGroups: NavGroup[] = [
       { label: "Events", href: "/member/events", icon: Calendar },
       { label: "Streaming", href: "/member/streaming", icon: Radio },
       { label: "Music", href: "/member/music", icon: Music },
+      { label: "Book Landing Audio", href: "/member/landing-audio", icon: Radio },
     ],
   },
   {
@@ -140,6 +141,7 @@ const adminNavGroups: NavGroup[] = [
     label: "Content",
     items: [
       { label: "Content", href: "/admin/content", icon: Music },
+      { label: "Music Bookings", href: "/admin/music-bookings", icon: Music },
       { label: "Events", href: "/admin/events", icon: Calendar },
       { label: "Questionnaire", href: "/admin/questionnaire", icon: HelpCircle },
       { label: "Goal Templates", href: "/admin/goals", icon: Target },
