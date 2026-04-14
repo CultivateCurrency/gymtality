@@ -53,6 +53,7 @@ const memberNavGroups: NavGroup[] = [
       { label: "Workouts", href: "/member/workouts", icon: Dumbbell },
       { label: "Activity", href: "/member/activity", icon: Activity },
       { label: "Goals", href: "/member/goals", icon: Target },
+      { label: "AI Coach", href: "/member/ai-coach", icon: Star },
     ],
   },
   {
@@ -197,12 +198,30 @@ export function Sidebar({ variant }: SidebarProps) {
     }
   };
 
+  // Smart active state detection: exact match or parent route
+  const isNavItemActive = (itemHref: string): boolean => {
+    if (pathname === itemHref) return true;
+    // Match parent routes like /member/profile when on /member/profile/[id]
+    // But don't match /member/p when on /member/profile
+    if (pathname.startsWith(itemHref + "/")) return true;
+    return false;
+  };
+
   const initials = user?.fullName
     ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
-  const membershipLabel =
-    variant === "member" ? "Pro Member" : variant === "coach" ? "Coach" : "Admin";
+  // Get membership label from role or subscription tier
+  const getMembershipLabel = () => {
+    if (variant === "coach") return "Coach";
+    if (variant === "admin") return "Admin";
+    // For members, use role-based label
+    if (user?.role === "ADMIN") return "Admin";
+    if (user?.role === "COACH") return "Coach";
+    return "Member";
+  };
+
+  const membershipLabel = getMembershipLabel();
 
   return (
     <aside
@@ -251,7 +270,7 @@ export function Sidebar({ variant }: SidebarProps) {
             </p>
             <div className="space-y-0.5">
               {group.items.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const isActive = isNavItemActive(item.href);
                 return (
                   <Link
                     key={item.href}

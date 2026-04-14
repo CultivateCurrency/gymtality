@@ -34,6 +34,10 @@ import {
   Compass,
   Gift,
   Salad,
+  Sparkles,
+  CheckCircle,
+  Circle,
+  MessageCircle,
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
@@ -103,8 +107,10 @@ export default function MemberDashboard() {
   const { data: eventsData, loading: eventsLoading } = useApi<EventsResponse>("/api/events?upcoming=true&limit=3");
   const { data: streamsData } = useApi<StreamsResponse>("/api/streaming?status=LIVE&limit=1");
   const { data: goalsData, loading: goalsLoading } = useApi<{ goals: Goal[] }>("/api/workouts/goals?limit=3");
-  const { data: leaderboardData } = useApi<LeaderboardResponse>("/api/leaderboard");
+  const { data: leaderboardData } = useApi<LeaderboardResponse>("/api/misc/leaderboard");
   const { data: badgesData } = useApi<BadgeResponse>("/api/badges?limit=4");
+  const { data: challengesData } = useApi<{ challenges: Array<{ id: string; title: string; description: string; progress: number; target: number }> }>("/api/challenges");
+  const { data: communityFeedData } = useApi<{ posts: Array<{ id: string; author: { fullName: string; username: string; profilePhoto: string | null }; content: string; createdAt: string; _count: { likes: number; comments: number } }> }>("/api/community/feed?page=1&limit=3");
 
   // ── Computed stats ──────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -214,6 +220,22 @@ export default function MemberDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* ── AI Coach Quick Start ────────────────────────────────────────── */}
+      <Link href="/member/ai-coach" className="block">
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/15 via-zinc-900 to-zinc-900 border border-purple-500/20 hover:border-purple-500/40 transition-colors cursor-pointer group">
+          <div className="p-2.5 rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 shrink-0 transition-colors">
+            <Sparkles size={18} className="text-purple-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">✨ Generate Your Perfect Workout Plan</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Let our AI coach create a personalized plan based on your goals, equipment, and preferences.</p>
+          </div>
+          <div className="shrink-0">
+            <ChevronRight size={18} className="text-purple-400/60 group-hover:text-purple-400 transition-colors" />
+          </div>
+        </div>
+      </Link>
 
       {/* ── Subscription upgrade banner (only shown when no active sub) ── */}
       {subscriptionData === null && (
@@ -367,6 +389,37 @@ export default function MemberDashboard() {
         </Card>
       )}
 
+      {/* ── Active Challenges ────────────────────────────────────────── */}
+      {(challengesData?.challenges ?? []).length > 0 && (
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2 text-base">
+              <Trophy size={16} className="text-yellow-500" />
+              Active Challenges
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {challengesData!.challenges.slice(0, 3).map((challenge) => {
+              const pct = Math.min(100, Math.round((challenge.progress / challenge.target) * 100));
+              return (
+                <div key={challenge.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-white truncate">{challenge.title}</p>
+                    <span className="text-xs text-zinc-500 shrink-0 ml-2">{pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-yellow-500 to-amber-400 rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Motivation Row: Leaderboard Rank + Latest Badge ───────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -491,6 +544,49 @@ export default function MemberDashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* ── Community Feed Preview ────────────────────────────────────── */}
+      {(communityFeedData?.posts ?? []).length > 0 && (
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2 text-base">
+              <Users size={16} className="text-indigo-500" />
+              Community Feed
+            </CardTitle>
+            <Link href="/member/community">
+              <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-white text-xs h-7 gap-1">
+                View all <ChevronRight size={12} />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {communityFeedData!.posts.map((post) => (
+              <div key={post.id} className="p-3 rounded-lg bg-zinc-800/30 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                <div className="flex items-start gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-white">{post.author.fullName.charAt(0)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{post.author.fullName}</p>
+                    <p className="text-xs text-zinc-500">@{post.author.username}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-zinc-300 line-clamp-2 mb-2">{post.content}</p>
+                <div className="flex items-center gap-3 text-xs text-zinc-500">
+                  <span className="flex items-center gap-1">
+                    <Heart size={12} />
+                    {post._count.likes}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MessageCircle size={12} />
+                    {post._count.comments}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Recommendations: Explore Grid ────────────────────────────── */}

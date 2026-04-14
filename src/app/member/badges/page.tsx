@@ -27,6 +27,22 @@ interface UserStats {
   goalsCompleted: number;
 }
 
+// Static color map to prevent Tailwind purge in production
+const BADGE_COLOR_MAP: Record<string, { bg: string; text: string }> = {
+  blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
+  green: { bg: "bg-green-500/20", text: "text-green-400" },
+  purple: { bg: "bg-purple-500/20", text: "text-purple-400" },
+  orange: { bg: "bg-orange-500/20", text: "text-orange-400" },
+  amber: { bg: "bg-amber-500/20", text: "text-amber-400" },
+  red: { bg: "bg-red-500/20", text: "text-red-400" },
+  yellow: { bg: "bg-yellow-500/20", text: "text-yellow-400" },
+  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-400" },
+  teal: { bg: "bg-teal-500/20", text: "text-teal-400" },
+  indigo: { bg: "bg-indigo-500/20", text: "text-indigo-400" },
+  emerald: { bg: "bg-emerald-500/20", text: "text-emerald-400" },
+  pink: { bg: "bg-pink-500/20", text: "text-pink-400" },
+};
+
 const BADGES = [
   { id: "first-workout", name: "First Rep", desc: "Complete your first workout", icon: Dumbbell, color: "blue", requirement: (s: UserStats) => s.totalWorkouts >= 1 },
   { id: "five-workouts", name: "Getting Started", desc: "Complete 5 workouts", icon: Dumbbell, color: "green", requirement: (s: UserStats) => s.totalWorkouts >= 5 },
@@ -112,18 +128,21 @@ export default function BadgesPage() {
             Earned ({earned.length})
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {earned.map((badge) => (
-              <Card key={badge.id} className="bg-zinc-900 border-orange-500/30 hover:border-orange-500/60 transition">
-                <CardContent className="pt-6 text-center">
-                  <div className={`w-14 h-14 rounded-full bg-${badge.color}-500/20 flex items-center justify-center mx-auto mb-3`}>
-                    <badge.icon className={`h-7 w-7 text-${badge.color}-400`} />
-                  </div>
-                  <p className="font-semibold text-white text-sm">{badge.name}</p>
-                  <p className="text-xs text-zinc-500 mt-1">{badge.desc}</p>
-                  <Badge className="mt-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">Earned</Badge>
-                </CardContent>
-              </Card>
-            ))}
+            {earned.map((badge) => {
+              const colors = BADGE_COLOR_MAP[badge.color] || BADGE_COLOR_MAP.blue;
+              return (
+                <Card key={badge.id} className="bg-zinc-900 border-orange-500/30 hover:border-orange-500/60 transition">
+                  <CardContent className="pt-6 text-center">
+                    <div className={`w-14 h-14 rounded-full ${colors.bg} flex items-center justify-center mx-auto mb-3`}>
+                      <badge.icon className={`h-7 w-7 ${colors.text}`} />
+                    </div>
+                    <p className="font-semibold text-white text-sm">{badge.name}</p>
+                    <p className="text-xs text-zinc-500 mt-1">{badge.desc}</p>
+                    <Badge className="mt-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">Earned</Badge>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
