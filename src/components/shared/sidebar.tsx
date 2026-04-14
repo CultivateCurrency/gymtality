@@ -30,7 +30,6 @@ import {
   Video,
   Bell,
   Compass,
-  ChevronRight,
   Star,
 } from "lucide-react";
 
@@ -224,12 +223,12 @@ export function Sidebar({ variant }: SidebarProps) {
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full w-64 bg-zinc-950 border-r border-zinc-800/60 flex flex-col z-40"
+      className="fixed left-0 top-0 h-full w-64 bg-[var(--sidebar)] border-r border-[var(--border)] flex flex-col z-40"
       role="navigation"
       aria-label={`${variant} navigation`}
     >
       {/* ── Logo ── */}
-      <div className="px-5 py-5 border-b border-zinc-800/60">
+      <div className="px-5 py-5 border-b border-[var(--border)]">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
             <Dumbbell size={16} className="text-white" />
@@ -247,14 +246,14 @@ export function Sidebar({ variant }: SidebarProps) {
       <div className="px-4 pt-4 pb-2">
         <form onSubmit={handleSearch}>
           <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
               aria-label="Search the platform"
-              className="w-full pl-8 pr-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition"
+              className="w-full pl-8 pr-3 py-1.5 bg-[var(--muted)] border border-[var(--border)] rounded-lg text-xs text-foreground placeholder-[var(--muted-foreground)] focus:outline-none focus:border-[var(--primary)]/50 focus:ring-1 focus:ring-[var(--primary)]/20 transition"
             />
           </div>
         </form>
@@ -264,7 +263,7 @@ export function Sidebar({ variant }: SidebarProps) {
       <nav className="flex-1 px-3 py-2 overflow-y-auto space-y-5" aria-label="Main menu">
         {groups.map((group) => (
           <div key={group.label}>
-            <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+            <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)] opacity-70">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -275,20 +274,17 @@ export function Sidebar({ variant }: SidebarProps) {
                     key={item.href}
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
-                    className={`flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all focus:outline-none focus:ring-1 focus:ring-orange-500/40 ${
+                    className={`flex items-center gap-3 px-2.5 py-2 rounded-xl text-[13px] font-medium transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/40 ${
                       isActive
-                        ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                        : "text-zinc-400 hover:text-white hover:bg-zinc-800/60 border border-transparent"
+                        ? "bg-[var(--sidebar-accent)] text-[var(--primary)] font-semibold"
+                        : "text-[var(--muted-foreground)] hover:text-foreground hover:bg-[var(--sidebar-accent)]"
                     }`}
                   >
                     <item.icon
                       size={15}
-                      className={isActive ? "text-orange-400" : "text-zinc-500"}
+                      className={isActive ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"}
                     />
                     {item.label}
-                    {isActive && (
-                      <ChevronRight size={12} className="ml-auto text-orange-400/60" />
-                    )}
                   </Link>
                 );
               })}
@@ -298,35 +294,35 @@ export function Sidebar({ variant }: SidebarProps) {
       </nav>
 
       {/* ── Profile Summary + Logout ── */}
-      <div className="p-3 border-t border-zinc-800/60 space-y-1">
+      <div className="p-3 border-t border-[var(--border)] space-y-1">
         {/* Profile row */}
         <Link
           href={`/${variant}/profile`}
-          className="flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-zinc-800/60 transition-colors group"
+          className="flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-[var(--sidebar-accent)] transition-colors duration-150 group"
         >
           {user?.profilePhoto ? (
             <img
               src={user.profilePhoto}
               alt={user.fullName}
-              className="w-8 h-8 rounded-full object-cover border border-zinc-700"
+              className="w-8 h-8 rounded-full object-cover border border-[var(--border)]"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold text-orange-400">{initials}</span>
+            <div className="w-8 h-8 rounded-full bg-[var(--primary)]/20 border border-[var(--primary)]/30 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-[var(--primary)]">{initials}</span>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-white truncate leading-tight">
+            <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
               {user?.fullName ?? "Member"}
             </p>
-            <p className="text-[10px] text-orange-400/80 font-medium">{membershipLabel}</p>
+            <p className="text-[10px] text-[var(--primary)]/80 font-medium">{membershipLabel}</p>
           </div>
         </Link>
 
         {/* Logout */}
         <button
           onClick={() => { logout(); router.push("/login"); }}
-          className="flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium text-zinc-500 hover:text-red-400 hover:bg-red-500/5 w-full transition-colors"
+          className="flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium text-[var(--muted-foreground)] hover:text-red-400 hover:bg-red-500/5 w-full transition-colors duration-150"
         >
           <LogOut size={15} />
           Log Out
