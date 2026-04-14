@@ -36,7 +36,7 @@ export default function LeaderboardPage() {
   const { user } = useAuthStore();
   const userId = user?.id;
 
-  const { data, loading } = useApi<LeaderboardEntry[]>(`/api/leaderboard?type=${type}`);
+  const { data, loading } = useApi<LeaderboardEntry[]>(`/api/misc/leaderboard?type=${type}`);
   const entries = data ?? [];
 
   return (
