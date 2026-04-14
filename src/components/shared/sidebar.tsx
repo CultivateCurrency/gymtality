@@ -53,7 +53,6 @@ const memberNavGroups: NavGroup[] = [
       { label: "Workouts", href: "/member/workouts", icon: Dumbbell },
       { label: "Activity", href: "/member/activity", icon: Activity },
       { label: "Goals", href: "/member/goals", icon: Target },
-      { label: "AI Coach", href: "/member/ai-coach", icon: Star },
     ],
   },
   {

@@ -34,7 +34,6 @@ import {
   Compass,
   Gift,
   Salad,
-  Sparkles,
   CheckCircle,
   Circle,
   MessageCircle,
@@ -221,21 +220,6 @@ export default function MemberDashboard() {
         ))}
       </div>
 
-      {/* ── AI Coach Quick Start ────────────────────────────────────────── */}
-      <Link href="/member/ai-coach" className="block">
-        <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/15 via-zinc-900 to-zinc-900 border border-purple-500/20 hover:border-purple-500/40 transition-colors cursor-pointer group">
-          <div className="p-2.5 rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 shrink-0 transition-colors">
-            <Sparkles size={18} className="text-purple-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white">✨ Generate Your Perfect Workout Plan</p>
-            <p className="text-xs text-zinc-400 mt-0.5">Let our AI coach create a personalized plan based on your goals, equipment, and preferences.</p>
-          </div>
-          <div className="shrink-0">
-            <ChevronRight size={18} className="text-purple-400/60 group-hover:text-purple-400 transition-colors" />
-          </div>
-        </div>
-      </Link>
 
       {/* ── Subscription upgrade banner (only shown when no active sub) ── */}
       {subscriptionData === null && (
