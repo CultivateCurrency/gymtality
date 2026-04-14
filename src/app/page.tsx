@@ -62,12 +62,17 @@ export default function WelcomePage() {
           Your complete fitness ecosystem — workouts, live coaching, community, and nutrition — built for a holistic transformation.
         </p>
 
-        {/* CTA button */}
+        {/* CTA buttons */}
         <div className="flex flex-col w-full gap-3 mb-9">
           <Link href="/signup" className="w-full">
             <button className="group w-full flex items-center justify-center gap-2 py-[14px] px-8 bg-orange-500 hover:bg-orange-400 text-white font-bold text-[14px] rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/25 active:scale-[0.98]">
               Get Started
               <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </Link>
+          <Link href="/member/landing-audio" className="w-full">
+            <button className="w-full flex items-center justify-center gap-2 py-[14px] px-8 bg-zinc-800 hover:bg-zinc-700 text-orange-400 font-semibold text-[14px] rounded-xl transition-all duration-200 border border-orange-500/30">
+              💿 Book Your Song — $20/Day
             </button>
           </Link>
         </div>

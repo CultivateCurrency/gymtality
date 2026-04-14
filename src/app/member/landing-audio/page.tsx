@@ -194,13 +194,23 @@ export default function LandingAudioBookingPage() {
         return;
       }
 
-      // Load Stripe and confirm payment
+      // Use test card for demo (in production, use Stripe Elements for real cards)
+      // For testing, use these test cards:
+      // 4242 4242 4242 4242 (success)
+      // 4000 0000 0000 0002 (decline)
+
       const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
       if (!stripeKey) {
         setError("Stripe configuration missing");
         setProcessing(false);
         return;
       }
+
+      // In production, prompt user for card details and use Stripe Elements
+      const testCard = prompt(
+        "DEMO MODE: Enter test card (4242 4242 4242 4242) or press OK to use default",
+        "4242"
+      );
 
       const script = document.createElement("script");
       script.src = "https://js.stripe.com/v3/";
@@ -214,17 +224,24 @@ export default function LandingAudioBookingPage() {
             return;
           }
 
-          const { error: stripeError } = await stripe.confirmCardPayment(bookingResponse.clientSecret, {
-            payment_method: {
-              card: {
-                token: "tok_visa",
+          // For production, use Stripe Elements. For now, use test token
+          const testToken = testCard === "4000 0000 0000 0002" ? "tok_chargeDeclined" : "tok_visa";
+
+          const { paymentIntent, error: stripeError } = await stripe.confirmCardPayment(
+            bookingResponse.clientSecret,
+            {
+              payment_method: {
+                type: "card",
+                card: {
+                  token: testToken,
+                },
               },
-            },
-          });
+            }
+          );
 
           if (stripeError) {
             setError(stripeError.message || "Payment failed");
-          } else {
+          } else if (paymentIntent?.status === "succeeded") {
             toast.success("Booking created! Your song is pending review.");
             setForm({ songName: "", artistName: "", bookingDate: "" });
             setSpotifyTrack(null);
@@ -235,6 +252,8 @@ export default function LandingAudioBookingPage() {
             setAgreedToTerms(false);
             setBookingMode("spotify");
             router.refresh();
+          } else {
+            setError("Payment processing failed");
           }
         } catch (err: any) {
           setError(err.message || "Payment processing failed");
