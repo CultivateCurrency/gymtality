@@ -11,6 +11,7 @@ import { useMutation } from "@/hooks/use-api";
 import { useApi } from "@/hooks/use-api";
 import { Music, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { RotationCalendarDetailed } from "@/components/member/rotation-calendar-detailed";
 
 interface SpotifyTrack {
   id: string;
@@ -276,14 +277,23 @@ export default function LandingAudioBookingPage() {
   const recentBookings = bookingsLoading ? [] : (bookingsData?.bookings || []);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Book Landing Page Audio Slot</h1>
-        <p className="text-zinc-400">Promote your music on Gymtality's landing page — $20 per day</p>
-      </div>
+    <div className="space-y-12">
+      {/* Song Schedule */}
+      <RotationCalendarDetailed
+        onBookClick={(date) => {
+          setForm({ ...form, bookingDate: date });
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+        }}
+      />
 
-      {/* Booking Form */}
+      <div className="max-w-2xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Book Your Song</h1>
+          <p className="text-zinc-400">Select your song and choose a date from the schedule above</p>
+        </div>
+
+        {/* Booking Form */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
           <CardTitle className="text-white">Create Booking</CardTitle>
@@ -587,6 +597,7 @@ export default function LandingAudioBookingPage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }
