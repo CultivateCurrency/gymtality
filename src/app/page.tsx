@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { RotationCalendar } from "@/components/landing/rotation-calendar";
 
 const rotatingWords = ["Strength", "Discipline", "Focus", "Clarity", "Consistency"];
 
@@ -102,6 +103,11 @@ export default function WelcomePage() {
         <span>·</span>
         <span>&copy; {new Date().getFullYear()} Gymtality</span>
       </footer>
+
+      {/* Song Rotation Calendar */}
+      <div className="relative z-5 w-full">
+        <RotationCalendar />
+      </div>
     </div>
   );
 }
