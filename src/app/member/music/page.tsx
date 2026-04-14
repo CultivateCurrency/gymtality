@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
+import { audioStateManager } from "@/lib/audio-context";
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -234,6 +235,15 @@ export default function MusicPage() {
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume / 100;
   }, [volume]);
+
+  // Auto-pause background music when user starts playing their own music
+  useEffect(() => {
+    if (isPlaying && currentSong?.audioUrl) {
+      audioStateManager.pauseBackgroundForUserPlayback();
+    } else if (!isPlaying && !currentSong) {
+      audioStateManager.resumeBackgroundAfterUserPlayback();
+    }
+  }, [isPlaying, currentSong?.audioUrl]);
 
   const handleToggleLike = async (e: React.MouseEvent, song: Song) => {
     e.stopPropagation();
