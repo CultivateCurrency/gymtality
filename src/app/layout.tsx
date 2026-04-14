@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
+import { BackgroundAudio } from "@/components/background-audio";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-orange-500 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">
           Skip to main content
         </a>
+        <BackgroundAudio />
         <Providers>{children}</Providers>
         <Toaster position="top-right" richColors />
       </body>
