@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { AudioRotationPlayer } from "@/components/landing/audio-rotation-player";
 
 const rotatingWords = ["Strength", "Discipline", "Focus", "Clarity", "Consistency"];
 
@@ -11,9 +10,35 @@ export default function WelcomePage() {
   const [wordIndex, setWordIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Auto-play audio on mount
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    // Try to play audio
+    const playAudio = async () => {
+      try {
+        await audioRef.current!.play();
+      } catch (err) {
+        // Browser blocked autoplay — unmute on first user interaction
+        const handleInteraction = async () => {
+          try {
+            await audioRef.current!.play();
+            document.removeEventListener("click", handleInteraction);
+          } catch (e) {
+            // Silent fail
+          }
+        };
+        document.addEventListener("click", handleInteraction);
+      }
+    };
+
+    playAudio();
   }, []);
 
   useEffect(() => {
@@ -85,10 +110,10 @@ export default function WelcomePage() {
         </p>
       </main>
 
-      {/* Audio Rotation Player */}
-      <div className="relative z-10 absolute top-8 left-0 right-0 px-6 max-w-2xl mx-auto w-full">
-        <AudioRotationPlayer />
-      </div>
+      {/* Background Audio — invisible */}
+      <audio ref={audioRef} loop style={{ display: "none" }}>
+        <source src="/audio/gymtality-theme-personal-trainer.mp3" type="audio/mpeg" />
+      </audio>
 
       {/* Footer */}
       <footer className="relative z-10 absolute bottom-0 left-0 right-0 pb-7 flex items-center justify-center gap-5 text-[11px] text-zinc-700">
