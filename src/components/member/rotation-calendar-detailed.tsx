@@ -101,33 +101,72 @@ export function RotationCalendarDetailed({ onBookClick }: RotationCalendarDetail
         </p>
       </div>
 
-      {/* Date Selector */}
+      {/* Date Selector with Availability */}
       <div className="grid grid-cols-5 gap-2">
-        {days.map((day) => (
-          <button
-            key={day.date}
-            onClick={() => setSelectedDate(day.date)}
-            className={`p-3 rounded-lg border transition-all ${
-              selectedDate === day.date
-                ? "bg-orange-500/20 border-orange-500 text-white"
-                : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600"
-            }`}
-          >
-            <p className="text-xs font-semibold">{day.dayName.split(",")[0]}</p>
-            <p className="text-sm font-bold mt-1">
-              {day.dayName.split(" ")[1]}
-            </p>
-            <p className="text-xs mt-2 text-zinc-400">
-              {Math.max(0, capacity - booked)} open
-            </p>
-          </button>
-        ))}
+        {days.map((day) => {
+          const dayBooked = (day.songs.length || 0) - 1;
+          const dayRemaining = Math.max(0, capacity - dayBooked);
+          const isFull = dayRemaining === 0;
+          const isLowAvailability = dayRemaining === 1;
+
+          return (
+            <button
+              key={day.date}
+              onClick={() => setSelectedDate(day.date)}
+              className={`p-3 rounded-lg border transition-all ${
+                selectedDate === day.date
+                  ? "bg-orange-500/20 border-orange-500 text-white"
+                  : isFull
+                  ? "bg-red-950/30 border-red-700/50 text-red-300 hover:border-red-600/50"
+                  : isLowAvailability
+                  ? "bg-yellow-950/30 border-yellow-700/50 text-yellow-300 hover:border-yellow-600/50"
+                  : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600"
+              }`}
+            >
+              <p className="text-xs font-semibold">{day.dayName.split(",")[0]}</p>
+              <p className="text-sm font-bold mt-1">
+                {day.dayName.split(" ")[1]}
+              </p>
+              {isFull ? (
+                <p className="text-xs mt-2 font-bold text-red-400">❌ FULL</p>
+              ) : (
+                <p className={`text-xs mt-2 font-bold ${isLowAvailability ? "text-yellow-400" : "text-green-400"}`}>
+                  ✓ {dayRemaining} {dayRemaining === 1 ? "slot" : "slots"}
+                </p>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Selected Day Details */}
       {selectedDay && (
         <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between mb-4">
+          {/* Availability Alert Banner */}
+          <div
+            className={`rounded-lg p-4 border ${
+              booked === capacity
+                ? "bg-red-950/40 border-red-700/50 text-red-200"
+                : booked === capacity - 1
+                ? "bg-yellow-950/40 border-yellow-700/50 text-yellow-200"
+                : "bg-green-950/40 border-green-700/50 text-green-200"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="font-semibold text-sm">
+                {booked === capacity
+                  ? "🔴 This date is FULLY BOOKED"
+                  : booked === capacity - 1
+                  ? "🟡 Only 1 slot remaining!"
+                  : `🟢 ${capacity - booked} slots available`}
+              </div>
+              <div className="font-bold text-lg">
+                {booked}/{capacity}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-zinc-400 uppercase tracking-wide">
                 {selectedDay.dayName}
@@ -181,21 +220,60 @@ export function RotationCalendarDetailed({ onBookClick }: RotationCalendarDetail
             )}
           </div>
 
-          {/* Availability Info */}
-          <div className="pt-4 border-t border-zinc-600">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-zinc-300">Booking Capacity</p>
-              <p className="text-sm font-bold text-orange-400">
-                {booked} / {capacity} slots booked
-              </p>
+          {/* Detailed Availability Info */}
+          <div className="pt-4 border-t border-zinc-600 space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-zinc-300">📊 Booking Capacity</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-zinc-400">
+                    {booked} booked
+                  </p>
+                  <p className="text-xs text-zinc-400">
+                    {capacity - booked} remaining
+                  </p>
+                </div>
+              </div>
+              <div className="w-full bg-zinc-700 rounded-full h-3 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    booked / capacity > 0.9
+                      ? "bg-gradient-to-r from-red-500 to-red-600"
+                      : booked / capacity > 0.5
+                      ? "bg-gradient-to-r from-yellow-500 to-amber-500"
+                      : "bg-gradient-to-r from-green-500 to-emerald-500"
+                  }`}
+                  style={{
+                    width: `${Math.min(100, (booked / capacity) * 100)}%`,
+                  }}
+                />
+              </div>
             </div>
-            <div className="w-full bg-zinc-700 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-orange-500 to-amber-400 h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.min(100, (booked / capacity) * 100)}%`,
-                }}
-              />
+
+            {/* Slot Count Display */}
+            <div className="grid grid-cols-2 gap-3 text-center text-sm">
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg py-2 px-3">
+                <p className="text-xs text-zinc-400 mb-1">Booked Slots</p>
+                <p className="text-lg font-bold text-orange-400">{booked}</p>
+              </div>
+              <div className={`${
+                capacity - booked === 0
+                  ? "bg-red-500/10 border border-red-500/30"
+                  : capacity - booked === 1
+                  ? "bg-yellow-500/10 border border-yellow-500/30"
+                  : "bg-green-500/10 border border-green-500/30"
+              } rounded-lg py-2 px-3`}>
+                <p className="text-xs text-zinc-400 mb-1">Available Slots</p>
+                <p className={`text-lg font-bold ${
+                  capacity - booked === 0
+                    ? "text-red-400"
+                    : capacity - booked === 1
+                    ? "text-yellow-400"
+                    : "text-green-400"
+                }`}>
+                  {capacity - booked}
+                </p>
+              </div>
             </div>
           </div>
 
