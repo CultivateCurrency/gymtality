@@ -12,6 +12,7 @@ import { useApi } from "@/hooks/use-api";
 import { Music, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { RotationCalendarDetailed } from "@/components/member/rotation-calendar-detailed";
+import { StripePaymentForm } from "@/components/landing-audio/stripe-payment-form";
 
 interface SpotifyTrack {
   id: string;
@@ -73,6 +74,8 @@ export default function LandingAudioBookingPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentClientSecret, setPaymentClientSecret] = useState("");
 
   const handleSpotifySearch = async () => {
     if (!spotifyQuery.trim()) return;
