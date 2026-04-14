@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Music } from "lucide-react";
+import { useAuthStore } from "@/store/auth-store";
 
 interface RotationDay {
   date: string;
@@ -19,6 +20,7 @@ interface RotationCalendarDetailedProps {
 }
 
 export function RotationCalendarDetailed({ onBookClick }: RotationCalendarDetailedProps) {
+  const { user } = useAuthStore();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [days, setDays] = useState<RotationDay[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -26,6 +28,12 @@ export function RotationCalendarDetailed({ onBookClick }: RotationCalendarDetail
 
   useEffect(() => {
     const fetchDays = async () => {
+      if (!user?.tenantId) {
+        console.error("No tenant ID available");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const daysData: RotationDay[] = [];
 
@@ -36,12 +44,12 @@ export function RotationCalendarDetailed({ onBookClick }: RotationCalendarDetail
 
         try {
           const availRes = await fetch(
-            `/api/landing/bookings/availability?date=${dateStr}`
+            `/api/landing/bookings/availability?date=${dateStr}&tenantId=${user.tenantId}`
           );
           const availData = await availRes.json();
           const availableSlots = availData.data?.availableSlots || 0;
 
-          const rotRes = await fetch(`/api/landing/rotation?date=${dateStr}`);
+          const rotRes = await fetch(`/api/landing/rotation?date=${dateStr}&tenantId=${user.tenantId}`);
           const rotData = await rotRes.json();
           const songs = rotData.data?.queue || [];
 
@@ -72,7 +80,7 @@ export function RotationCalendarDetailed({ onBookClick }: RotationCalendarDetail
     };
 
     fetchDays();
-  }, [currentDate]);
+  }, [currentDate, user?.tenantId]);
 
   const selectedDay = days.find((d) => d.date === selectedDate);
   const booked = (selectedDay?.songs.length || 0) - 1;
