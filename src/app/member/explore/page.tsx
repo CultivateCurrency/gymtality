@@ -85,10 +85,22 @@ interface EventsResponse {
 }
 
 export default function ExplorePage() {
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [activeEquipment, setActiveEquipment] = useState<string[]>([]);
   const [activeBodyParts, setActiveBodyParts] = useState<string[]>([]);
+
+  // Debounced search handler
+  const handleSearchChange = (query: string) => {
+    setSearchInput(query);
+    if (searchTimeout) clearTimeout(searchTimeout);
+    const timeout = setTimeout(() => {
+      setSearch(query);
+    }, 300);
+    setSearchTimeout(timeout);
+  };
 
   const searchQuery = search ? `&search=${encodeURIComponent(search)}` : "";
 
@@ -140,8 +152,8 @@ export default function ExplorePage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <Input
             placeholder="Search workouts, coaches, events, posts..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
           />
         </div>
@@ -289,22 +301,25 @@ export default function ExplorePage() {
             {coaches.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {coaches.map((coach) => (
-                  <Card
-                    key={coach.id}
-                    className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition cursor-pointer"
-                  >
-                    <CardContent className="pt-4 flex flex-col items-center text-center gap-2">
-                      <Avatar className="h-16 w-16">
-                        <AvatarFallback className="bg-orange-500/20 text-orange-500 text-lg">
-                          {coach.fullName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <h3 className="font-semibold text-white text-sm truncate w-full">
-                        {coach.fullName}
-                      </h3>
-                      <p className="text-xs text-zinc-500">@{coach.username}</p>
-                    </CardContent>
-                  </Card>
+                  <Link key={coach.id} href={`/member/profile/${coach.id}`}>
+                    <Card className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition cursor-pointer h-full group">
+                      <CardContent className="pt-4 flex flex-col items-center text-center gap-2">
+                        <Avatar className="h-16 w-16">
+                          {coach.profilePhoto ? (
+                            <img src={coach.profilePhoto} alt={coach.fullName} className="h-full w-full object-cover rounded-full" />
+                          ) : (
+                            <AvatarFallback className="bg-orange-500/20 text-orange-500 text-lg">
+                              {coach.fullName.charAt(0)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <h3 className="font-semibold text-white text-sm truncate w-full group-hover:text-orange-400 transition">
+                          {coach.fullName}
+                        </h3>
+                        <p className="text-xs text-zinc-500">@{coach.username}</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             ) : (

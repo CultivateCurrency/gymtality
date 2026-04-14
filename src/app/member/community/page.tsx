@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -31,6 +31,7 @@ import {
   Send,
   X,
   UserPlus,
+  ChevronRight,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
@@ -100,6 +101,7 @@ export default function CommunityPage() {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
@@ -111,6 +113,12 @@ export default function CommunityPage() {
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [discoverSearch, setDiscoverSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, number>>({});
+  const [optimisticSaves, setOptimisticSaves] = useState<Record<string, number>>({});
   const { user } = useAuthStore();
   const userId = user?.id;
 
@@ -118,13 +126,28 @@ export default function CommunityPage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const { upload } = useUpload();
 
-  const { data: postsData, loading: postsLoading, refetch: refetchPosts } = useApi<PostsResponse>("/api/community/posts?page=1&limit=20");
+  const { data: postsData, loading: postsLoading, refetch: refetchPosts } = useApi<PostsResponse>(`/api/community/posts?page=${page}&limit=20`);
   const { data: groupsData, loading: groupsLoading, refetch: refetchGroups } = useApi<GroupsResponse>("/api/community/groups?page=1&limit=20");
   const { data: searchResults } = useApi<SearchUser[]>(
     discoverSearch.length >= 2 ? `/api/users/search?q=${encodeURIComponent(discoverSearch)}&limit=20` : null
   );
 
-  const allPosts = postsData?.posts ?? [];
+  // Append posts when page changes
+  useEffect(() => {
+    if (postsData?.posts) {
+      if (page === 1) {
+        setAllPosts(postsData.posts);
+      } else if (allPosts.length > 0 && postsData.posts.length > 0) {
+        const isNewData = !allPosts.some(p => p.id === postsData.posts[0].id);
+        if (isNewData) {
+          setAllPosts([...allPosts, ...postsData.posts]);
+        }
+      }
+    }
+  }, [postsData, page]);
+
+  const pagination = postsData?.pagination;
+  const hasMorePosts = pagination && page < pagination.totalPages;
   const posts = searchQuery
     ? allPosts.filter((p) =>
         (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -133,6 +156,16 @@ export default function CommunityPage() {
       )
     : allPosts;
   const groups = groupsData?.groups ?? [];
+
+  // Debounced search
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    if (searchTimeout) clearTimeout(searchTimeout);
+    const timeout = setTimeout(() => {
+      // Search happens automatically via filtered posts
+    }, 300);
+    setSearchTimeout(timeout);
+  };
 
   const handleMediaUpload = async (file: File, type: "IMAGE" | "VIDEO") => {
     setUploadingMedia(true);
@@ -173,21 +206,51 @@ export default function CommunityPage() {
 
   const handleLike = async (postId: string) => {
     if (!userId) return;
+    // Optimistic update
+    const newLikedSet = new Set(likedPosts);
+    const isLiked = newLikedSet.has(postId);
+    if (isLiked) {
+      newLikedSet.delete(postId);
+      setOptimisticLikes((prev) => ({ ...prev, [postId]: (prev[postId] || 0) - 1 }));
+    } else {
+      newLikedSet.add(postId);
+      setOptimisticLikes((prev) => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+    }
+    setLikedPosts(newLikedSet);
+
+    // Background sync
     try {
       await apiFetch(`/api/community/posts/${postId}/like`, { method: "POST" });
-      refetchPosts();
     } catch {
+      // Revert on error
+      setLikedPosts(likedPosts);
+      setOptimisticLikes((prev) => ({ ...prev, [postId]: isLiked ? (prev[postId] || 0) + 1 : (prev[postId] || 0) - 1 }));
       toast.error("Failed to like post");
     }
   };
 
   const handleSave = async (postId: string) => {
     if (!userId) return;
+    // Optimistic update
+    const newSavedSet = new Set(savedPosts);
+    const isSaved = newSavedSet.has(postId);
+    if (isSaved) {
+      newSavedSet.delete(postId);
+      setOptimisticSaves((prev) => ({ ...prev, [postId]: (prev[postId] || 0) - 1 }));
+    } else {
+      newSavedSet.add(postId);
+      setOptimisticSaves((prev) => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+      toast.success("Post saved");
+    }
+    setSavedPosts(newSavedSet);
+
+    // Background sync
     try {
       await apiFetch(`/api/community/posts/${postId}/save`, { method: "POST" });
-      refetchPosts();
-      toast.success("Post saved");
     } catch {
+      // Revert on error
+      setSavedPosts(savedPosts);
+      setOptimisticSaves((prev) => ({ ...prev, [postId]: isSaved ? (prev[postId] || 0) + 1 : (prev[postId] || 0) - 1 }));
       toast.error("Failed to save post");
     }
   };
@@ -206,9 +269,11 @@ export default function CommunityPage() {
   const loadComments = async (postId: string) => {
     if (expandedComments === postId) {
       setExpandedComments(null);
+      setCommentText(""); // Reset comment text when closing
       return;
     }
     setExpandedComments(postId);
+    setCommentText(""); // Reset comment text when opening
     setLoadingComments(postId);
     try {
       const data = await apiFetch<Comment[]>(`/api/community/posts/${postId}/comments`);
@@ -292,12 +357,12 @@ export default function CommunityPage() {
           <Input
             placeholder="Search posts, people..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
             autoFocus
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white">
+            <button onClick={() => handleSearchChange("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white">
               <X className="h-4 w-4" />
             </button>
           )}
@@ -511,10 +576,10 @@ export default function CommunityPage() {
                 <div className="flex items-center gap-6 pt-2 border-t border-zinc-800">
                   <button
                     onClick={() => handleLike(post.id)}
-                    className="flex items-center gap-1.5 text-zinc-400 hover:text-red-400 transition text-sm"
+                    className={`flex items-center gap-1.5 transition text-sm ${likedPosts.has(post.id) ? "text-red-400" : "text-zinc-400 hover:text-red-400"}`}
                   >
-                    <Heart className="h-4 w-4" />
-                    {post._count.likes}
+                    <Heart className={`h-4 w-4 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
+                    {(post._count.likes + (optimisticLikes[post.id] || 0))}
                   </button>
                   <button
                     onClick={() => loadComments(post.id)}
@@ -525,10 +590,10 @@ export default function CommunityPage() {
                   </button>
                   <button
                     onClick={() => handleSave(post.id)}
-                    className="flex items-center gap-1.5 text-zinc-400 hover:text-orange-400 transition text-sm"
+                    className={`flex items-center gap-1.5 transition text-sm ${savedPosts.has(post.id) ? "text-orange-400" : "text-zinc-400 hover:text-orange-400"}`}
                   >
-                    <Bookmark className="h-4 w-4" />
-                    {post._count.saves}
+                    <Bookmark className={`h-4 w-4 ${savedPosts.has(post.id) ? "fill-current" : ""}`} />
+                    {(post._count.saves + (optimisticSaves[post.id] || 0))}
                   </button>
                   <button
                     onClick={() => handleShare(post)}
@@ -590,6 +655,26 @@ export default function CommunityPage() {
             </Card>
           ))}
 
+          {/* Load More Button */}
+          {hasMorePosts && (
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={() => setPage(page + 1)}
+                disabled={postsLoading}
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                {postsLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More Posts"
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Empty */}
           {!postsLoading && posts.length === 0 && (
             <div className="text-center py-8">
@@ -649,28 +734,36 @@ export default function CommunityPage() {
           )}
 
           {groups.map((group) => (
-            <Card key={group.id} className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition cursor-pointer">
-              <CardContent className="pt-4 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-zinc-800">
-                  <Users className="h-8 w-8 text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-white">{group.name}</h3>
-                  {group.description && (
-                    <p className="text-sm text-zinc-400">{group.description}</p>
-                  )}
-                  <p className="text-xs text-zinc-500 mt-1">{group._count.members} members</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-zinc-700 text-zinc-300"
-                  onClick={() => handleJoinGroup(group.id)}
-                >
-                  Join
-                </Button>
-              </CardContent>
-            </Card>
+            <Link key={group.id} href={`/member/community/groups/${group.id}`}>
+              <Card className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition cursor-pointer group/card">
+                <CardContent className="pt-4 flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-zinc-800">
+                    <Users className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white group-hover/card:text-orange-400 transition">{group.name}</h3>
+                    {group.description && (
+                      <p className="text-sm text-zinc-400">{group.description}</p>
+                    )}
+                    <p className="text-xs text-zinc-500 mt-1">{group._count.members} members</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-zinc-700 text-zinc-300"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleJoinGroup(group.id);
+                      }}
+                    >
+                      Join
+                    </Button>
+                    <ChevronRight className="h-5 w-5 text-zinc-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
 
           {!groupsLoading && groups.length === 0 && (

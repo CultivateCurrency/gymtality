@@ -34,7 +34,7 @@ import { toast } from "sonner";
 
 type ViewMode = "month" | "week" | "day";
 type EventType = "LIVE_CLASS" | "IN_PERSON" | "WORKSHOP";
-type FilterCategory = "All" | "Classes" | "Gym Events" | "Livestreams" | "Challenges" | "Personal Sessions";
+type FilterCategory = "All" | "Classes" | "Gym Events" | "Livestreams" | "Challenges";
 
 const TYPE_STYLES: Record<EventType, string> = {
   LIVE_CLASS: "bg-red-500/20 text-red-400 border-red-500/30",
@@ -43,7 +43,7 @@ const TYPE_STYLES: Record<EventType, string> = {
 };
 
 const FILTER_CATEGORIES: FilterCategory[] = [
-  "All", "Classes", "Gym Events", "Livestreams", "Challenges", "Personal Sessions",
+  "All", "Classes", "Gym Events", "Livestreams", "Challenges",
 ];
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -148,6 +148,19 @@ export default function EventsPage() {
     }
   };
 
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!userId) return;
+    try {
+      await apiFetch(`/api/events/bookings/${bookingId}`, {
+        method: "DELETE",
+      });
+      refetch();
+      toast.success("Booking cancelled");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel booking");
+    }
+  };
+
   const prevMonth = () => {
     if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); }
     else { setCalMonth(calMonth - 1); }
@@ -203,19 +216,28 @@ export default function EventsPage() {
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
-            <div className="flex bg-zinc-800 rounded-lg p-1">
+            <div className="flex bg-zinc-800 rounded-lg p-1 gap-1">
               {(["month", "week", "day"] as ViewMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
-                    viewMode === mode
-                      ? "bg-orange-500 text-white"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                </button>
+                <div key={mode} className="relative group">
+                  <button
+                    onClick={() => mode === "month" && setViewMode(mode)}
+                    disabled={mode !== "month"}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
+                      viewMode === mode
+                        ? "bg-orange-500 text-white"
+                        : mode === "month"
+                        ? "text-zinc-400 hover:text-white cursor-pointer"
+                        : "text-zinc-600 cursor-not-allowed"
+                    }`}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
+                  {mode !== "month" && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+                      Coming soon
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -303,12 +325,13 @@ export default function EventsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {myBookings.filter((b) => b.status !== "CANCELLED").map((booking) => (
               <Card key={booking.id} className="bg-zinc-900 border-zinc-800">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
+                <CardContent className="pt-4 space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
                       <p className="font-medium text-white">{booking.event.title}</p>
                       <p className="text-xs text-zinc-400">{formatEventDate(booking.event.startTime)}</p>
-                      <Badge className={`mt-1 text-xs ${
+                      <p className="text-xs text-zinc-500 mt-1">{formatEventTime(booking.event.startTime, booking.event.endTime)}</p>
+                      <Badge className={`mt-2 text-xs ${
                         booking.status === "BOOKED" ? "bg-green-500/20 text-green-400 border-green-500/30" :
                         booking.status === "ATTENDED" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
                         "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
@@ -316,18 +339,26 @@ export default function EventsPage() {
                         {booking.status}
                       </Badge>
                     </div>
-                    {booking.qrCode && booking.status === "BOOKED" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-                        onClick={() => setSelectedQR({ eventTitle: booking.event.title, qrCode: booking.qrCode! })}
-                      >
-                        <QrCode className="h-4 w-4 mr-1" />
-                        Check-in QR
-                      </Button>
-                    )}
                   </div>
+
+                  {booking.qrCode && booking.status === "BOOKED" && (
+                    <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+                      <p className="text-xs text-zinc-400">Confirmation ID:</p>
+                      <p className="font-mono text-sm text-white break-all">{booking.qrCode}</p>
+                      <p className="text-xs text-zinc-500">Show this code at the event entrance</p>
+                    </div>
+                  )}
+
+                  {booking.status === "BOOKED" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                      onClick={() => handleCancelBooking(booking.id)}
+                    >
+                      Cancel Booking
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
