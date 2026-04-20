@@ -35,7 +35,7 @@ export function StripePaymentForm({
           return;
         }
 
-        const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+        const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
         if (!stripeKey) {
           onError("Stripe configuration missing");
           return;
@@ -92,7 +92,7 @@ export function StripePaymentForm({
 
     try {
       setLoading(true);
-      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
       if (!stripeKey) throw new Error("Stripe not configured");
 
       const stripe = window.Stripe(stripeKey);

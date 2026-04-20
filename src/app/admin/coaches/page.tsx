@@ -95,6 +95,8 @@ export default function AdminCoachesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<CoachProfile | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [viewingCoach, setViewingCoach] = useState<CoachProfile | null>(null);
+  const [screeningCoach, setScreeningCoach] = useState<string | null>(null);
+  const [screeningResult, setScreeningResult] = useState<{ assessment: string; recommendation: string; score: number } | null>(null);
 
   const {
     data: pendingData,
@@ -146,6 +148,26 @@ export default function AdminCoachesPage() {
       setDeleteConfirm(null);
       refetchApproved();
       refetchPending();
+    }
+  }
+
+  async function handleAIScreening(coach: CoachProfile) {
+    setScreeningCoach(coach.userId);
+    try {
+      const response = await apiFetch("/api/ai/screen-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: coach.userId,
+          bio: coach.bio,
+          category: coach.category,
+        }),
+      });
+      if (response?.success) {
+        setScreeningResult(response.data);
+      }
+    } finally {
+      setScreeningCoach(null);
     }
   }
 
@@ -314,6 +336,20 @@ export default function AdminCoachesPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                  disabled={screeningCoach === coach.userId}
+                  onClick={() => handleAIScreening(coach)}
+                >
+                  {screeningCoach === coach.userId ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Star className="h-4 w-4 mr-1" />
+                  )}
+                  AI Assessment
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                   onClick={() => setViewingCoach(coach)}
                 >
@@ -331,6 +367,45 @@ export default function AdminCoachesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* AI Assessment Dialog */}
+      <Dialog open={screeningResult !== null} onOpenChange={(open) => !open && setScreeningResult(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">AI Coach Assessment</DialogTitle>
+          </DialogHeader>
+          {screeningResult && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                  <span className="text-lg font-bold text-purple-400">{screeningResult.score}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-400">Overall Score</p>
+                  <p className="text-xs text-zinc-500">Out of 10</p>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase">Assessment</p>
+                <p className="text-sm text-zinc-200">{screeningResult.assessment}</p>
+              </div>
+              <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <p className="text-xs font-semibold text-purple-400 mb-2 uppercase">Recommendation</p>
+                <p className="text-sm text-purple-200">{screeningResult.recommendation}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              onClick={() => setScreeningResult(null)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Approved Coaches */}
       <Card className="bg-zinc-900 border-zinc-800">

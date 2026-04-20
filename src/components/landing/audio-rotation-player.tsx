@@ -33,9 +33,7 @@ export function AudioRotationPlayer() {
   useEffect(() => {
     if (rotationData?.queue && rotationData.queue.length > 0) {
       setQueue(rotationData.queue);
-      console.log("Audio queue loaded:", rotationData.queue);
     } else {
-      console.log("No queue data yet:", rotationData);
     }
   }, [rotationData]);
 
@@ -72,11 +70,9 @@ export function AudioRotationPlayer() {
       // Start muted to bypass autoplay restrictions, then unmute
       audioRef.current.muted = true;
       try {
-        console.log("Attempting to play:", audioUrl);
         await audioRef.current.play();
         audioRef.current.muted = isMuted; // Apply actual mute state after playing starts
         setIsPlaying(true);
-        console.log("Audio playing successfully");
       } catch (err) {
         console.error("Failed to play audio:", err, { audioUrl, muted: isMuted });
       }

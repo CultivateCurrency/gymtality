@@ -97,6 +97,12 @@ interface BadgeResponse {
   badges: Array<{ id: string; title: string; description: string; icon: string; earnedAt: string | null }>;
 }
 
+interface ProgressCoachResponse {
+  feedback: string;
+  suggestions: string[];
+  focus: string;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────
 export default function MemberDashboard() {
   const { user } = useAuthStore();
@@ -110,6 +116,7 @@ export default function MemberDashboard() {
   const { data: badgesData } = useApi<BadgeResponse>("/api/badges?limit=4");
   const { data: challengesData } = useApi<{ challenges: Array<{ id: string; title: string; description: string; progress: number; target: number }> }>("/api/challenges");
   const { data: communityFeedData } = useApi<{ posts: Array<{ id: string; author: { fullName: string; username: string; profilePhoto: string | null }; content: string; createdAt: string; _count: { likes: number; comments: number } }> }>("/api/community/feed?page=1&limit=3");
+  const { data: progressCoachData } = useApi<ProgressCoachResponse>("/api/ai/progress-coach");
 
   // ── Computed stats ──────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -400,6 +407,43 @@ export default function MemberDashboard() {
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── AI Progress Coach ─────────────────────────────────────────── */}
+      {progressCoachData && (
+        <Card className="bg-gradient-to-br from-purple-500/15 to-zinc-900 border-purple-500/30">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2 text-base">
+              <Zap size={16} className="text-purple-400" />
+              AI Coach Feedback
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+              <p className="text-sm text-zinc-200">{progressCoachData.feedback}</p>
+            </div>
+            {progressCoachData.focus && (
+              <div className="flex items-center gap-2">
+                <Badge className="bg-purple-500/30 text-purple-200 border border-purple-500/30">
+                  Focus: {progressCoachData.focus}
+                </Badge>
+              </div>
+            )}
+            {progressCoachData.suggestions && progressCoachData.suggestions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Suggestions</p>
+                <ul className="space-y-1.5">
+                  {progressCoachData.suggestions.map((suggestion, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-zinc-300">
+                      <CheckCircle size={14} className="text-purple-400 mt-0.5 shrink-0" />
+                      <span>{suggestion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

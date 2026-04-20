@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { RotationCalendar } from "@/components/landing/rotation-calendar";
+import { LandingMusicPlayer } from "@/components/landing/music-player";
 
 const rotatingWords = ["Strength", "Discipline", "Focus", "Clarity", "Consistency"];
 
@@ -11,9 +11,13 @@ export default function WelcomePage() {
   const [wordIndex, setWordIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [todayDate, setTodayDate] = useState("");
 
   useEffect(() => {
     setMounted(true);
+    // Set today's date in YYYY-MM-DD format for music player
+    const today = new Date();
+    setTodayDate(today.toISOString().split("T")[0]);
   }, []);
 
   useEffect(() => {
@@ -99,9 +103,9 @@ export default function WelcomePage() {
         <span>&copy; {new Date().getFullYear()} Gymtality</span>
       </footer>
 
-      {/* Song Rotation Calendar */}
+      {/* Landing Music Player */}
       <div className="relative z-5 w-full">
-        <RotationCalendar />
+        {todayDate && <LandingMusicPlayer date={todayDate} />}
       </div>
     </div>
   );

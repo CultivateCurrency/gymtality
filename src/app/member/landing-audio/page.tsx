@@ -203,7 +203,7 @@ export default function LandingAudioBookingPage() {
       // 4242 4242 4242 4242 (success)
       // 4000 0000 0000 0002 (decline)
 
-      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
       if (!stripeKey) {
         setError("Stripe configuration missing");
         setProcessing(false);

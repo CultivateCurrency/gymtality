@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Dumbbell,
   Home,
@@ -20,8 +21,10 @@ import {
   User,
   Play,
   Loader2,
+  Sparkles,
 } from "lucide-react";
-import { useApi } from "@/hooks/use-api";
+import { useApi, apiFetch } from "@/hooks/use-api";
+import { toast } from "sonner";
 
 const FILTERS = ["All", "Home", "Gym", "Strength", "Cardio", "Yoga", "Meditation", "Mentality"];
 const BODY_PARTS = ["Chest", "Back", "Legs", "Arms", "Core", "Shoulders", "Full Body"];
@@ -47,6 +50,11 @@ export default function WorkoutsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [allPlans, setAllPlans] = useState<WorkoutsResponse["plans"]>([]);
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [aiDialogOpen, setAIDialogOpen] = useState(false);
+  const [aiPlanType, setAIPlanType] = useState<"GYM" | "HOME">("GYM");
+  const [generatedPlan, setGeneratedPlan] = useState<any>(null);
+  const [savingPlan, setSavingPlan] = useState(false);
 
   const filterParam =
     activeFilter === "Home" ? "&type=HOME"
@@ -86,6 +94,52 @@ export default function WorkoutsPage() {
   const pagination = data?.pagination;
   const hasMore = pagination && page < pagination.totalPages;
 
+  const handleGenerateAIPlan = async () => {
+    setGeneratingAI(true);
+    try {
+      const response = await apiFetch("/api/ai/workout-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: aiPlanType, daysPerWeek: 3 }),
+      });
+      if (response?.success) {
+        setGeneratedPlan(response.data);
+        toast.success("AI plan generated!");
+      } else {
+        toast.error(response?.error || "Failed to generate plan");
+      }
+    } catch (err) {
+      toast.error("Error generating plan");
+      console.error(err);
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
+  const handleSaveAIPlan = async () => {
+    if (!generatedPlan) return;
+    setSavingPlan(true);
+    try {
+      const response = await apiFetch("/api/ai/workout-plan/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(generatedPlan),
+      });
+      if (response?.success) {
+        toast.success("Plan saved! Check your plans.");
+        setAIDialogOpen(false);
+        setGeneratedPlan(null);
+      } else {
+        toast.error(response?.error || "Failed to save plan");
+      }
+    } catch (err) {
+      toast.error("Error saving plan");
+      console.error(err);
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -93,6 +147,81 @@ export default function WorkoutsPage() {
           <h1 className="text-3xl font-bold text-white">Workouts</h1>
           <p className="text-zinc-400 mt-1">Browse and start workout plans</p>
         </div>
+        <Dialog open={aiDialogOpen} onOpenChange={setAIDialogOpen}>
+          <DialogTrigger>
+            <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2">
+              <Sparkles className="h-4 w-4" />
+              Generate with AI
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Generate Your Workout Plan</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Button
+                  variant={aiPlanType === "GYM" ? "default" : "outline"}
+                  onClick={() => setAIPlanType("GYM")}
+                  className="flex-1"
+                >
+                  Gym
+                </Button>
+                <Button
+                  variant={aiPlanType === "HOME" ? "default" : "outline"}
+                  onClick={() => setAIPlanType("HOME")}
+                  className="flex-1"
+                >
+                  Home
+                </Button>
+              </div>
+              {!generatedPlan ? (
+                <Button
+                  onClick={handleGenerateAIPlan}
+                  disabled={generatingAI}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  {generatingAI ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Generate Plan"
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="bg-zinc-800 rounded-lg p-4">
+                    <h3 className="text-white font-semibold mb-2">{generatedPlan.name}</h3>
+                    <p className="text-zinc-400 text-sm">{generatedPlan.description}</p>
+                  </div>
+                  <Button
+                    onClick={handleSaveAIPlan}
+                    disabled={savingPlan}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    {savingPlan ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save This Plan"
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => setGeneratedPlan(null)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Generate Another
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Search & Filter */}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UtensilsCrossed, Plus, Trash2, Loader2, Flame, Beef, Wheat, Droplets } from "lucide-react";
+import { UtensilsCrossed, Plus, Trash2, Loader2, Flame, Beef, Wheat, Droplets, Sparkles } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { toast } from "sonner";
 
@@ -40,6 +40,10 @@ export default function MealsPage() {
   const [meals, setMeals] = useState<Partial<Meal>[]>([{ name: "", mealType: "BREAKFAST", dayOfWeek: "MON" }]);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [aiDialogOpen, setAIDialogOpen] = useState(false);
+  const [generatedMealPlan, setGeneratedMealPlan] = useState<any>(null);
+  const [savingPlan, setSavingPlan] = useState(false);
 
   const { data: plans, loading, refetch } = useApi<MealPlan[]>("/api/workouts/meals");
   const { data: dietTemplates } = useApi<any[]>("/api/admin/diet-templates");
@@ -138,6 +142,53 @@ export default function MealsPage() {
     };
   };
 
+  const handleGenerateAIMealPlan = async () => {
+    setGeneratingAI(true);
+    try {
+      const response = await apiFetch("/api/ai/meal-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ daysPerWeek: 7, dietType: "balanced" }),
+      });
+      if (response?.success) {
+        setGeneratedMealPlan(response.data);
+        toast.success("AI meal plan generated!");
+      } else {
+        toast.error(response?.error || "Failed to generate meal plan");
+      }
+    } catch (err) {
+      toast.error("Error generating meal plan");
+      console.error(err);
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
+  const handleSaveAIMealPlan = async () => {
+    if (!generatedMealPlan) return;
+    setSavingPlan(true);
+    try {
+      const response = await apiFetch("/api/ai/meal-plan/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(generatedMealPlan),
+      });
+      if (response?.success) {
+        toast.success("Meal plan saved!");
+        setAIDialogOpen(false);
+        setGeneratedMealPlan(null);
+        refetch();
+      } else {
+        toast.error(response?.error || "Failed to save meal plan");
+      }
+    } catch (err) {
+      toast.error("Error saving meal plan");
+      console.error(err);
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -145,7 +196,67 @@ export default function MealsPage() {
           <h1 className="text-3xl font-bold text-white">Meal Plans</h1>
           <p className="text-zinc-400 mt-1">Plan your nutrition and track macros.</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <div className="flex gap-2">
+          <Dialog open={aiDialogOpen} onOpenChange={setAIDialogOpen}>
+            <DialogTrigger>
+              <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white gap-2">
+                <Sparkles className="h-4 w-4" />
+                AI Plan
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-zinc-900 border-zinc-800">
+              <DialogHeader>
+                <DialogTitle className="text-white">Generate Your Meal Plan</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {!generatedMealPlan ? (
+                  <Button
+                    onClick={handleGenerateAIMealPlan}
+                    disabled={generatingAI}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {generatingAI ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Meal Plan"
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="bg-zinc-800 rounded-lg p-4">
+                      <h3 className="text-white font-semibold mb-2">{generatedMealPlan.name}</h3>
+                      <p className="text-zinc-400 text-sm">{generatedMealPlan.description}</p>
+                    </div>
+                    <Button
+                      onClick={handleSaveAIMealPlan}
+                      disabled={savingPlan}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      {savingPlan ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save This Plan"
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => setGeneratedMealPlan(null)}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Generate Another
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger>
             <Button className="bg-orange-500 hover:bg-orange-600 text-white">
               <Plus className="h-4 w-4 mr-2" />
@@ -196,6 +307,7 @@ export default function MealsPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {loading ? (
