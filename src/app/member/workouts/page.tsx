@@ -62,7 +62,7 @@ export default function WorkoutsPage() {
     : activeFilter !== "All" ? `&category=${activeFilter}`
     : "";
 
-  const url = `/api/workouts?page=${page}&limit=20${search ? `&search=${encodeURIComponent(search)}` : ""}${filterParam}`;
+  const url = `/api/workouts/plans?page=${page}&limit=20${search ? `&search=${encodeURIComponent(search)}` : ""}${filterParam}`;
   const { data, loading, error } = useApi<WorkoutsResponse>(url);
 
   // Reset to page 1 when search or filter changes

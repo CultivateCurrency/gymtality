@@ -78,8 +78,8 @@ interface WorkoutsResponse {
 
 export default function CoachContentPage() {
   const { user } = useAuthStore();
-  const { data: workoutsData, loading, error, refetch } = useApi<WorkoutsResponse>("/api/workouts");
-  const { mutate: publishPlan, loading: publishing, error: publishError } = useMutation<WorkoutPlan>("/api/workouts", "POST");
+  const { data: workoutsData, loading, error, refetch } = useApi<WorkoutsResponse>("/api/workouts/plans/mine");
+  const { mutate: publishPlan, loading: publishing, error: publishError } = useMutation<WorkoutPlan>("/api/workouts/plans", "POST");
   const { upload, uploading: uploadingVideo } = useUpload();
 
   const [planName, setPlanName] = useState("");

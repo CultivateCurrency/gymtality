@@ -55,7 +55,7 @@ export default function CoachVideosPage() {
   const { upload, uploading: uploadingFile } = useUpload();
 
   const { data, loading, refetch } = useApi<VideosResponse>(
-    "/api/workouts?type=VIDEO"
+    "/api/workouts/plans?type=VIDEO"
   );
   const videos = data?.workoutPlans ?? [];
 
@@ -70,7 +70,7 @@ export default function CoachVideosPage() {
         videoUrl = result.url;
       }
 
-      await apiFetch("/api/workouts", {
+      await apiFetch("/api/workouts/plans", {
         method: "POST",
         body: JSON.stringify({
           name: title,
@@ -98,7 +98,7 @@ export default function CoachVideosPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await apiFetch(`/api/workouts/${id}`, { method: "DELETE" });
+      await apiFetch(`/api/workouts/plans/${id}`, { method: "DELETE" });
       refetch();
       toast.success("Video deleted");
     } catch (err: any) {
