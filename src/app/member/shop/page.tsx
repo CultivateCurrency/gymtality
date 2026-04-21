@@ -28,6 +28,24 @@ type ProductCategory = "All" | "Apparel" | "Supplements" | "Accessories" | "Equi
 
 const CATEGORIES: ProductCategory[] = ["All", "Apparel", "Supplements", "Accessories", "Equipment", "Digital"];
 
+// Helper to get gradient colors by category
+const getCategoryGradient = (category: string | null) => {
+  switch (category) {
+    case "Apparel":
+      return "from-orange-500 to-red-500";
+    case "Accessories":
+      return "from-blue-500 to-cyan-500";
+    case "Equipment":
+      return "from-green-500 to-emerald-500";
+    case "Digital":
+      return "from-purple-500 to-pink-500";
+    case "Supplements":
+      return "from-amber-500 to-yellow-500";
+    default:
+      return "from-zinc-700 to-zinc-600";
+  }
+};
+
 interface Product {
   id: string;
   name: string;
@@ -52,6 +70,118 @@ interface CartResponse {
   total: number;
 }
 
+// Demo Gymtality merchandise for empty state
+const DEMO_PRODUCTS: Product[] = [
+  {
+    id: "demo-1",
+    name: "Gymtality Classic T-Shirt",
+    description: "Premium cotton blend with embroidered Gymtality logo",
+    price: 29.99,
+    salePrice: 24.99,
+    category: "Apparel",
+    imageUrl: null,
+    images: [],
+    stock: 45,
+    featured: true,
+  },
+  {
+    id: "demo-2",
+    name: "Performance Hoodie",
+    description: "Moisture-wicking hoodie perfect for pre/post workout",
+    price: 59.99,
+    salePrice: null,
+    category: "Apparel",
+    imageUrl: null,
+    images: [],
+    stock: 32,
+    featured: true,
+  },
+  {
+    id: "demo-3",
+    name: "Gym Shorts",
+    description: "Breathable mesh shorts with inner shorts and pockets",
+    price: 39.99,
+    salePrice: null,
+    category: "Apparel",
+    imageUrl: null,
+    images: [],
+    stock: 28,
+    featured: false,
+  },
+  {
+    id: "demo-4",
+    name: "Stainless Steel Water Bottle",
+    description: "25oz insulated bottle keeps drinks cold for 24 hours",
+    price: 34.99,
+    salePrice: null,
+    category: "Accessories",
+    imageUrl: null,
+    images: [],
+    stock: 67,
+    featured: false,
+  },
+  {
+    id: "demo-5",
+    name: "Gym Duffel Bag",
+    description: "Large capacity duffel with shoe compartment and straps",
+    price: 49.99,
+    salePrice: 39.99,
+    category: "Accessories",
+    imageUrl: null,
+    images: [],
+    stock: 18,
+    featured: true,
+  },
+  {
+    id: "demo-6",
+    name: "Resistance Band Set",
+    description: "5-pack of premium latex bands (light to heavy resistance)",
+    price: 24.99,
+    salePrice: null,
+    category: "Equipment",
+    imageUrl: null,
+    images: [],
+    stock: 52,
+    featured: false,
+  },
+  {
+    id: "demo-7",
+    name: "Gym Gloves",
+    description: "Professional weightlifting gloves with wrist support",
+    price: 19.99,
+    salePrice: null,
+    category: "Accessories",
+    imageUrl: null,
+    images: [],
+    stock: 41,
+    featured: false,
+  },
+  {
+    id: "demo-8",
+    name: "Training Program Bundle",
+    description: "8-week comprehensive digital training program + nutrition guide",
+    price: 99.99,
+    salePrice: 79.99,
+    category: "Digital",
+    imageUrl: null,
+    images: [],
+    stock: 999,
+    featured: true,
+  },
+  {
+    id: "demo-9",
+    name: "Foam Roller",
+    description: "Professional-grade 18in foam roller for muscle recovery",
+    price: 44.99,
+    salePrice: null,
+    category: "Equipment",
+    imageUrl: null,
+    images: [],
+    stock: 25,
+    featured: false,
+  },
+];
+
 export default function ShopPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 text-orange-500 animate-spin" /></div>}>
@@ -68,11 +198,17 @@ function ShopContent() {
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const productsUrl = `/api/shop/products?page=1&limit=20${activeCategory !== "All" ? `&category=${encodeURIComponent(activeCategory)}` : ""}`;
-  const { data: products, loading, error } = useApi<Product[]>(productsUrl);
+  const { data: apiProducts, loading, error } = useApi<Product[]>(productsUrl);
   const { data: cartData, refetch: refetchCart } = useApi<CartResponse>("/api/shop/cart");
   const cartItems = cartData?.items ?? [];
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
+  // Use demo products when API returns empty or errors
+  const displayProducts = (apiProducts && apiProducts.length > 0)
+    ? apiProducts
+    : DEMO_PRODUCTS.filter(p => activeCategory === "All" || p.category === activeCategory);
+  const isShowingDemo = !apiProducts || apiProducts.length === 0;
 
   // Check for success redirect from Stripe
   useEffect(() => {
@@ -196,33 +332,28 @@ function ShopContent() {
         </div>
       )}
 
-      {/* Error */}
-      {error && (
-        <div className="text-center py-12">
-          <p className="text-red-400">Failed to load products. Please try again.</p>
-        </div>
-      )}
-
-      {/* Empty */}
-      {!loading && !error && products.length === 0 && (
-        <div className="text-center py-12">
-          <ShoppingBag className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-          <p className="text-zinc-400">No products found in this category.</p>
+      {/* Demo Banner */}
+      {isShowingDemo && !loading && (
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400 text-sm">🛍️ Browse sample Gymtality merch. Admins can upload real products in the admin panel.</p>
         </div>
       )}
 
       {/* Product Grid */}
-      {!loading && products.length > 0 && (
+      {!loading && displayProducts.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => (
+          {displayProducts.map((product) => (
             <Card key={product.id} className="bg-zinc-900 border-zinc-800 hover:border-orange-500/50 transition group">
               <CardContent className="pt-4 space-y-3">
                 {/* Image Placeholder */}
-                <div className="relative h-48 bg-zinc-800 rounded-lg flex items-center justify-center overflow-hidden">
+                <div className={`relative h-48 rounded-lg flex items-center justify-center overflow-hidden bg-gradient-to-br ${getCategoryGradient(product.category)}`}>
                   {product.imageUrl || product.images?.[0] ? (
                     <img src={product.imageUrl ?? product.images[0]} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                   ) : (
-                    <ImageIcon className="h-12 w-12 text-zinc-600" />
+                    <div className="text-center">
+                      <ImageIcon className="h-12 w-12 text-white/50 mx-auto mb-2" />
+                      <p className="text-white/30 text-xs font-medium">{product.category}</p>
+                    </div>
                   )}
                   {product.salePrice != null && product.stock > 0 && (
                     <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
