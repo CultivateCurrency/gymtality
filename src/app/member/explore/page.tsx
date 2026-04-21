@@ -84,6 +84,85 @@ interface EventsResponse {
   pagination: any;
 }
 
+// Demo content for empty states
+const DEMO_WORKOUTS: WorkoutPlan[] = [
+  {
+    id: "demo-1",
+    name: "Full Body Strength",
+    type: "GYM",
+    category: "Strength",
+    difficulty: "INTERMEDIATE",
+    coverImage: null,
+    coach: { id: "coach-1", fullName: "John Coach", username: "johncoach", profilePhoto: null },
+    _count: { likes: 245, saves: 120, sessions: 89 },
+  },
+  {
+    id: "demo-2",
+    name: "HIIT Cardio Blast",
+    type: "HOME",
+    category: "Cardio",
+    difficulty: "ADVANCED",
+    coverImage: null,
+    coach: { id: "coach-2", fullName: "Sarah Trainer", username: "sarahtrainer", profilePhoto: null },
+    _count: { likes: 312, saves: 156, sessions: 142 },
+  },
+  {
+    id: "demo-3",
+    name: "Yoga for Flexibility",
+    type: "HOME",
+    category: "Flexibility",
+    difficulty: "BEGINNER",
+    coverImage: null,
+    coach: { id: "coach-3", fullName: "Alex Wellness", username: "alexwellness", profilePhoto: null },
+    _count: { likes: 189, saves: 203, sessions: 67 },
+  },
+];
+
+const DEMO_COACHES: Coach[] = [
+  { id: "coach-1", fullName: "John Coach", username: "johncoach", profilePhoto: null, role: "COACH" },
+  { id: "coach-2", fullName: "Sarah Trainer", username: "sarahtrainer", profilePhoto: null, role: "COACH" },
+  { id: "coach-3", fullName: "Alex Wellness", username: "alexwellness", profilePhoto: null, role: "COACH" },
+  { id: "coach-4", fullName: "Mike Gains", username: "mikegains", profilePhoto: null, role: "COACH" },
+  { id: "coach-5", fullName: "Emma Strong", username: "emmastrong", profilePhoto: null, role: "COACH" },
+  { id: "coach-6", fullName: "Chris Fit", username: "chrisfit", profilePhoto: null, role: "COACH" },
+];
+
+const DEMO_EVENTS: EventItem[] = [
+  {
+    id: "demo-event-1",
+    title: "Morning Yoga Session",
+    type: "CLASS",
+    startTime: new Date(Date.now() + 86400000).toISOString(),
+    location: "Studio A",
+  },
+  {
+    id: "demo-event-2",
+    title: "Advanced Strength Training",
+    type: "TRAINING",
+    startTime: new Date(Date.now() + 172800000).toISOString(),
+    location: "Main Gym",
+  },
+];
+
+const DEMO_POSTS: Post[] = [
+  {
+    id: "demo-post-1",
+    title: "My First 100 Pushups!",
+    caption: "Just hit my personal record. So proud of the progress I've made with consistent training.",
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    user: { id: "user-1", fullName: "Alex Runner", username: "alexrunner", profilePhoto: null },
+    _count: { likes: 42, comments: 8, saves: 15 },
+  },
+  {
+    id: "demo-post-2",
+    title: null,
+    caption: "Just completed a week without skipping a single workout! Building the habit is harder than the actual exercise.",
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+    user: { id: "user-2", fullName: "Jordan Fit", username: "jordanfit", profilePhoto: null },
+    _count: { likes: 67, comments: 12, saves: 31 },
+  },
+];
+
 export default function ExplorePage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -105,7 +184,7 @@ export default function ExplorePage() {
   const searchQuery = search ? `&search=${encodeURIComponent(search)}` : "";
 
   const { data: workoutsData, loading: workoutsLoading } = useApi<WorkoutsResponse>(
-    `/api/workouts?page=1&limit=6${searchQuery}`
+    `/api/workouts/plans?page=1&limit=6${searchQuery}`
   );
   const { data: coachesData, loading: coachesLoading } = useApi<UsersResponse>(
     `/api/admin/users?role=COACH&page=1&limit=6${search ? `&search=${encodeURIComponent(search)}` : ""}`
@@ -117,11 +196,12 @@ export default function ExplorePage() {
     `/api/events?upcoming=true&limit=4${searchQuery}`
   );
 
-  const workouts = workoutsData?.plans ?? [];
-  const coaches = coachesData?.users ?? [];
-  const posts = postsData?.posts ?? [];
-  const events = eventsData?.events ?? [];
+  const workouts = (workoutsData?.plans && workoutsData.plans.length > 0) ? workoutsData.plans : DEMO_WORKOUTS;
+  const coaches = (coachesData?.users && coachesData.users.length > 0) ? coachesData.users : DEMO_COACHES;
+  const posts = (postsData?.posts && postsData.posts.length > 0) ? postsData.posts : DEMO_POSTS;
+  const events = (eventsData?.events && eventsData.events.length > 0) ? eventsData.events : DEMO_EVENTS;
   const isLoading = workoutsLoading || coachesLoading || postsLoading || eventsLoading;
+  const hasRealData = (workoutsData?.plans?.length ?? 0) > 0 || (coachesData?.users?.length ?? 0) > 0 || (postsData?.posts?.length ?? 0) > 0 || (eventsData?.events?.length ?? 0) > 0;
 
   const toggleEquipment = (eq: string) => {
     setActiveEquipment((prev) =>
@@ -144,6 +224,11 @@ export default function ExplorePage() {
           Explore
         </h1>
         <p className="text-zinc-400 mt-1">Search across workouts, coaches, events, and community</p>
+        {!hasRealData && !isLoading && (
+          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-blue-400 text-sm">🎯 Welcome to Gymtality! Browse sample content to explore features, then start your fitness journey.</p>
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -285,9 +370,7 @@ export default function ExplorePage() {
                   </Link>
                 ))}
               </div>
-            ) : (
-              <p className="text-zinc-500 text-sm">No workouts found.</p>
-            )}
+            ) : null}
           </div>
 
           {/* Popular Trainers */}
@@ -322,9 +405,7 @@ export default function ExplorePage() {
                   </Link>
                 ))}
               </div>
-            ) : (
-              <p className="text-zinc-500 text-sm">No trainers found.</p>
-            )}
+            ) : null}
           </div>
 
           {/* Upcoming Events */}
@@ -370,9 +451,7 @@ export default function ExplorePage() {
                   </Card>
                 ))}
               </div>
-            ) : (
-              <p className="text-zinc-500 text-sm">No upcoming events.</p>
-            )}
+            ) : null}
           </div>
 
           {/* Community Posts */}
@@ -425,9 +504,7 @@ export default function ExplorePage() {
                   </Card>
                 ))}
               </div>
-            ) : (
-              <p className="text-zinc-500 text-sm">No community posts found.</p>
-            )}
+            ) : null}
           </div>
         </>
       )}
