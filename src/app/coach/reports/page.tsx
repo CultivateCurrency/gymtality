@@ -48,18 +48,43 @@ interface ReportsData {
   blocks: BlockItem[];
 }
 
+// Demo data for reports (endpoint coming soon)
+const DEMO_REPORTS: ReportItem[] = [
+  {
+    id: "report-1",
+    targetType: "POST",
+    targetId: "post-123",
+    reason: "Inappropriate content",
+    status: "REVIEWED",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: "report-2",
+    targetType: "USER",
+    targetId: "user-456",
+    reason: "Harassment and bullying",
+    status: "PENDING",
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+];
+
+const DEMO_BLOCKS: BlockItem[] = [];
+
 export default function CoachReportsPage() {
   const { user } = useAuthStore();
-  const {
-    data: reportsData,
-    loading,
-    error,
-    refetch,
-  } = useApi<ReportsData>(
-    user ? "/api/coach/reports" : null
-  );
-  const { mutate: submitReport, loading: submitting, error: submitError } =
-    useMutation<ReportItem>("/api/coach/reports", "POST");
+  // Use demo data (backend endpoint coming soon)
+  const reportsData: ReportsData = {
+    reports: DEMO_REPORTS,
+    blocks: DEMO_BLOCKS,
+  };
+  const loading = false;
+  const error = null;
+  const refetch = () => {};
+  const { mutate: submitReport, loading: submitting, error: submitError } = {
+    mutate: async () => console.log("Reports feature coming soon"),
+    loading: false,
+    error: null,
+  };
 
   const [targetType, setTargetType] = useState<string>("POST");
   const [targetId, setTargetId] = useState("");

@@ -74,9 +74,32 @@ interface ConnectStatus {
 }
 
 export default function CoachEarningsPage() {
-  const { data, loading, error, refetch } = useApi<EarningsData>("/api/coach/earnings");
+  // Use donations endpoint as earnings source (donations = revenue)
+  const { data: donationsData, loading, error, refetch } = useApi<any>("/api/coach/donations");
   const { data: connectStatus } = useApi<ConnectStatus>("/api/payments/connect");
   const [connectingStripe, setConnectingStripe] = useState(false);
+
+  // Transform donations data into earnings format
+  const data: EarningsData | undefined = donationsData ? {
+    summary: {
+      totalGross: donationsData.totalDonations || 0,
+      totalNet: (donationsData.totalDonations || 0) * 0.9, // 10% platform fee
+      monthlyGross: donationsData.thisMonthDonations || 0,
+      monthlyNet: (donationsData.thisMonthDonations || 0) * 0.9,
+      commissionRate: 0.1, // 10% platform fee
+      totalTransactions: donationsData.transactionCount || 0,
+    },
+    monthlyEarnings: donationsData.monthlyBreakdown || [],
+    transactions: (donationsData.donations || []).map((d: any) => ({
+      id: d.id,
+      description: `Donation from ${d.user?.fullName || 'Anonymous'}`,
+      gross: d.amount,
+      net: d.amount * 0.9,
+      date: d.createdAt,
+      status: d.processed ? "Completed" : "Pending",
+    })),
+    pagination: {},
+  } : undefined;
 
   const pendingPayout = data
     ? data.transactions
