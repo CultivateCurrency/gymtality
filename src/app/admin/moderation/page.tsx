@@ -28,7 +28,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { useApi, useMutation } from "@/hooks/use-api";
+import { useApi, apiFetch } from "@/hooks/use-api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,20 +44,9 @@ interface Report {
   targetType: "POST" | "USER" | "COMMENT" | "CONTENT";
   targetId: string;
   reason: string;
-  description: string | null;
   status: "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED";
   createdAt: string;
   reporter: Reporter;
-}
-
-interface ModerationData {
-  reports: Report[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
 }
 
 // ─── Static data ─────────────────────────────────────────────────────────────
@@ -136,52 +125,57 @@ export default function AdminModerationPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [newKeyword, setNewKeyword] = useState("");
 
+  const [mutating, setMutating] = useState(false);
+
   // Filtered list URL (drives the reports queue)
   const filteredUrl = useMemo(() => {
     const p = new URLSearchParams();
     const apiStatus = mapStatusToApi(statusFilter);
     if (statusFilter !== "All" && apiStatus) p.set("status", apiStatus);
-    return `/api/admin/moderation?${p}`;
+    return `/api/admin/reports?${p}`;
   }, [statusFilter]);
 
   // All-reports URL for stats (no status filter)
-  const statsUrl = "/api/admin/moderation";
+  const statsUrl = "/api/admin/reports";
 
   const {
     data: filteredResult,
     loading: filteredLoading,
     error: filteredError,
     refetch: refetchFiltered,
-  } = useApi<ModerationData>(filteredUrl);
+  } = useApi<Report[]>(filteredUrl);
 
   const {
     data: statsResult,
     loading: statsLoading,
-  } = useApi<ModerationData>(statsUrl);
-
-  const { mutate, loading: mutating } = useMutation<
-    { success: boolean },
-    { reportId: string; status: "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED" }
-  >("/api/admin/moderation", "PUT");
+  } = useApi<Report[]>(statsUrl);
 
   const handleAction = useCallback(
     async (
       reportId: string,
       status: "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED"
     ) => {
-      await mutate({ reportId, status });
-      refetchFiltered();
+      setMutating(true);
+      try {
+        await apiFetch(`/api/admin/reports/${reportId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status }),
+        });
+        refetchFiltered();
+      } catch {} finally {
+        setMutating(false);
+      }
     },
-    [mutate, refetchFiltered]
+    [refetchFiltered]
   );
 
   // Derived stats from the unfiltered fetch
-  const allReports: Report[] = statsResult?.reports ?? [];
+  const allReports: Report[] = statsResult ?? [];
   const statPending = allReports.filter((r) => r.status === "PENDING").length;
   const statReviewed = allReports.filter((r) => r.status === "REVIEWED").length;
   const statResolved = allReports.filter((r) => r.status === "RESOLVED").length;
 
-  const reports: Report[] = filteredResult?.reports ?? [];
+  const reports: Report[] = filteredResult ?? [];
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -392,20 +386,13 @@ export default function AdminModerationPage() {
                     </div>
                   </div>
 
-                  {/* Description */}
-                  {report.description && (
-                    <p className="text-sm text-zinc-400">{report.description}</p>
-                  )}
-
-                  {/* Content Preview (description doubles as preview) */}
-                  {report.description && (
-                    <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-700">
-                      <p className="text-xs text-zinc-500 mb-1">Content Preview:</p>
-                      <p className="text-sm text-zinc-300 italic">
-                        &quot;{report.description}&quot;
-                      </p>
-                    </div>
-                  )}
+                  {/* Reason */}
+                  <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-700">
+                    <p className="text-xs text-zinc-500 mb-1">Reason:</p>
+                    <p className="text-sm text-zinc-300 italic">
+                      &quot;{report.reason}&quot;
+                    </p>
+                  </div>
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-1">

@@ -125,6 +125,7 @@ interface UserProfile {
   username: string;
   email: string;
   profilePhoto: string | null;
+  twoFactorEnabled?: boolean;
 }
 
 function SettingsContent() {
@@ -159,6 +160,8 @@ function SettingsContent() {
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({});
   const [notifLoading, setNotifLoading] = useState(true);
   const [notifSaving, setNotifSaving] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [toggling2FA, setToggling2FA] = useState(false);
 
   const { data: userData } = useApi<UserProfile>("/api/users/me");
   const { data: subData } = useApi<SubscriptionData>("/api/admin/subscriptions?mySubscription=true");
@@ -170,6 +173,7 @@ function SettingsContent() {
       setUsername(userData.username || "");
       setEmail(userData.email || "");
       setProfilePhoto(userData.profilePhoto || null);
+      setTwoFactorEnabled(userData.twoFactorEnabled ?? false);
     }
   }, [userData]);
 
@@ -405,7 +409,7 @@ function SettingsContent() {
                   <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
                 ) : (
                   <AvatarFallback className="bg-orange-500/20 text-orange-500 text-2xl font-bold">
-                    J
+                    {userData?.fullName?.charAt(0)?.toUpperCase() ?? user?.email?.charAt(0)?.toUpperCase() ?? "?"}
                   </AvatarFallback>
                 )}
               </Avatar>
@@ -421,11 +425,16 @@ function SettingsContent() {
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      try {
-                        const result = await upload(file, "profile-photos", "image");
-                        setProfilePhoto(result.url);
-                      } catch { /* handled by hook */ }
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error("Image must be under 5MB");
+                      return;
+                    }
+                    try {
+                      const result = await upload(file, "profile-photos", "image");
+                      setProfilePhoto(result.url);
+                    } catch {
+                      toast.error("Failed to upload photo. Max 5MB, images only.");
                     }
                   }}
                 />
@@ -529,6 +538,44 @@ function SettingsContent() {
                 </div>
               </DialogContent>
             </Dialog>
+          </div>
+
+          {/* Two-Factor Authentication */}
+          <div className="space-y-1.5">
+            <label className="text-sm text-zinc-300 flex items-center gap-2">
+              <Shield className="h-4 w-4 text-zinc-500" />
+              Two-Factor Authentication
+            </label>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+              <div>
+                <p className="text-sm text-zinc-300">
+                  {twoFactorEnabled ? "Enabled — you'll be emailed a code on each sign-in" : "Disabled — your account is protected by password only"}
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  setToggling2FA(true);
+                  try {
+                    const res = await fetch("/api/auth/toggle-2fa", { method: "POST" });
+                    const data = await res.json();
+                    if (data.success) {
+                      setTwoFactorEnabled(data.data.twoFactorEnabled);
+                      toast.success(data.data.twoFactorEnabled ? "Two-factor authentication enabled" : "Two-factor authentication disabled");
+                    } else {
+                      toast.error(data.error || "Failed to update 2FA setting");
+                    }
+                  } catch {
+                    toast.error("Something went wrong");
+                  } finally {
+                    setToggling2FA(false);
+                  }
+                }}
+                disabled={toggling2FA}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 ${twoFactorEnabled ? "bg-orange-500" : "bg-zinc-700"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${twoFactorEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
           </div>
 
           <Button

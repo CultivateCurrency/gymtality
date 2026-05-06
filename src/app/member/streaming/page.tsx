@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useApi } from "@/hooks/use-api";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useApi, apiFetch } from "@/hooks/use-api";
 import {
   Card,
   CardContent,
@@ -269,20 +269,34 @@ function StreamCard({
 export default function StreamingPage() {
   const [watchingStream, setWatchingStream] = useState<Stream | null>(null);
 
-  // Fetch all streams by status
-  const { data: liveData, loading: loadingLive } = useApi<{ streams: Stream[] }>(
-    "/api/streaming?status=LIVE&limit=20"
-  );
-  const { data: scheduledData, loading: loadingScheduled } = useApi<{ streams: Stream[] }>(
+  // Live streams — polled every 15s so new streams appear without page reload
+  const [liveStreams, setLiveStreams] = useState<Stream[]>([]);
+  const [loadingLive, setLoadingLive] = useState(true);
+
+  const fetchLive = useCallback(async () => {
+    try {
+      const result = await apiFetch<Stream[]>("/api/streaming?status=LIVE&limit=20");
+      setLiveStreams(result ?? []);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    setLoadingLive(true);
+    fetchLive().finally(() => setLoadingLive(false));
+    const interval = setInterval(fetchLive, 15_000);
+    return () => clearInterval(interval);
+  }, [fetchLive]);
+
+  // Scheduled + ended — one-shot is fine for these tabs
+  const { data: scheduledData, loading: loadingScheduled } = useApi<Stream[]>(
     "/api/streaming?status=SCHEDULED&limit=20"
   );
-  const { data: endedData, loading: loadingEnded } = useApi<{ streams: Stream[] }>(
+  const { data: endedData, loading: loadingEnded } = useApi<Stream[]>(
     "/api/streaming?status=ENDED&limit=20"
   );
 
-  const liveStreams = liveData?.streams ?? [];
-  const scheduledStreams = scheduledData?.streams ?? [];
-  const endedStreams = endedData?.streams ?? [];
+  const scheduledStreams = scheduledData ?? [];
+  const endedStreams = endedData ?? [];
 
   function handleWatch(stream: Stream) {
     setWatchingStream(stream);
