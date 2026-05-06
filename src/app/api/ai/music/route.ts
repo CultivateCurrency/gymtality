@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { anthropic } from "@/lib/anthropic";
+import { generateMusicRecommendations } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -38,20 +38,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { workoutType, tempo, genre } = parsed.data;
-
-    const systemPrompt = `You are an expert music curator who specializes in workout and athletic performance playlists. Recommend 4-5 specific genres, artists, and playlist vibes that match the workout context. For each recommendation, include the genre, 2-3 artist names, the energy/vibe description, and why it works for this workout type. Format as a clean numbered list.`;
-
-    const userMessage = `Recommend music for: ${workoutType}${tempo ? ` (${tempo} tempo)` : ""}${genre ? `, preferably ${genre} style` : ""}.`;
-
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 512,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    });
-
-    const recommendations = message.content[0].type === "text" ? message.content[0].text : "";
+    const recommendations = await generateMusicRecommendations(parsed.data);
 
     return NextResponse.json({ success: true, data: { recommendations } });
   } catch (error) {

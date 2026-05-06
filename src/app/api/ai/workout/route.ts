@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { anthropic } from "@/lib/anthropic";
+import { generateWorkoutPlan } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -40,25 +40,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { goal, level, equipment, durationMins, focus } = parsed.data;
-
-    const systemPrompt = `You are an expert personal trainer and strength coach. Generate structured, safe, and effective workout plans. Format your response in clear markdown with sections for warm-up, main workout (with sets, reps, rest periods), and cool-down. Be specific about weights/intensity based on level. Always prioritize proper form.`;
-
-    const userMessage = `Create a ${durationMins}-minute ${level} workout plan with the following details:
-- Goal: ${goal}
-- Available equipment: ${equipment.join(", ")}
-${focus ? `- Focus area: ${focus}` : ""}
-
-Include: warm-up (5 min), main workout with exercise names, sets, reps, rest periods, and a cool-down (5 min). Add brief form notes for key exercises.`;
-
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    });
-
-    const plan = message.content[0].type === "text" ? message.content[0].text : "";
+    const plan = await generateWorkoutPlan(parsed.data);
 
     return NextResponse.json({ success: true, data: { plan } });
   } catch (error) {

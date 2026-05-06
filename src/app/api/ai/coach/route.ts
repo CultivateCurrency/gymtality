@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { anthropic } from "@/lib/anthropic";
+import { generateCoachReply } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -37,22 +37,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, context } = parsed.data;
-
-    const systemPrompt = `You are a certified personal trainer and nutrition coach with 10+ years of experience. Provide evidence-based, practical advice on training, nutrition, recovery, and performance. Always prioritize safety — for any medical, injury, or health condition questions, recommend consulting a licensed healthcare professional. Be direct, specific, and helpful. Keep responses concise (3-5 sentences for simple questions, more for complex ones).`;
-
-    const userContent = context
-      ? `User context: ${context}\n\nQuestion: ${message}`
-      : message;
-
-    const apiMessage = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 768,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userContent }],
-    });
-
-    const reply = apiMessage.content[0].type === "text" ? apiMessage.content[0].text : "";
+    const reply = await generateCoachReply(parsed.data);
 
     return NextResponse.json({ success: true, data: { reply } });
   } catch (error) {
