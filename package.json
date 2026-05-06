@@ -27,6 +27,7 @@
     "lucide-react": "^0.577.0",
     "next": "^15.5.13",
     "next-themes": "^0.4.6",
+    "openai": "^6.36.0",
     "quickblox": "^2.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

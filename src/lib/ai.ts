@@ -1,88 +1,168 @@
-import { anthropic } from "./anthropic";
+import { openai } from "./openai-client";
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "gpt-4o-mini";
 
-export async function generateWorkoutPlan(input: {
+// ── Types ──────────────────────────────────────────────────────────────────
+
+export interface WorkoutExercise {
+  exercise: string;
+  sets: number;
+  reps: string;
+  rest: string;
+  formNote?: string;
+}
+
+export interface WorkoutPhase {
+  exercise: string;
+  duration: string;
+}
+
+export interface GeneratedWorkout {
+  warmUp: WorkoutPhase[];
+  mainWorkout: WorkoutExercise[];
+  coolDown: WorkoutPhase[];
+  totalDurationMins: number;
+  difficulty: string;
+  notes?: string;
+}
+
+export interface GeneratedMindset {
+  affirmation: string;
+  coaching: string;
+  actionStep: string;
+  focus: string;
+}
+
+export interface MusicRecommendation {
+  genre: string;
+  artists: string[];
+  vibe: string;
+  bpm?: string;
+  reason: string;
+}
+
+export interface CategorizedMusic {
+  recommendations: MusicRecommendation[];
+  playlistVibe: string;
+}
+
+export interface CoachResponse {
+  reply: string;
+  tips?: string[];
+  safetyNote?: string;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function parseJson<T>(raw: string | null | undefined): T {
+  if (!raw) throw new Error("Empty response from AI");
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new Error("AI returned invalid JSON");
+  }
+}
+
+async function chat(system: string, user: string): Promise<string> {
+  const completion = await openai.chat.completions.create({
+    model: MODEL,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  });
+  return completion.choices[0]?.message?.content ?? "";
+}
+
+// ── AI Functions ───────────────────────────────────────────────────────────
+
+export async function generateWorkout(input: {
   goal: string;
   level: string;
   equipment: string[];
   durationMins: number;
   focus?: string;
-}): Promise<string> {
-  const systemPrompt = `You are an expert personal trainer and strength coach. Generate structured, safe, and effective workout plans. Format your response in clear markdown with sections for warm-up, main workout (with sets, reps, rest periods), and cool-down. Be specific about weights/intensity based on level. Always prioritize proper form.`;
+}): Promise<GeneratedWorkout> {
+  const system = `You are an expert personal trainer. Generate a structured workout plan and return it as JSON matching this exact shape:
+{
+  "warmUp": [{ "exercise": string, "duration": string }],
+  "mainWorkout": [{ "exercise": string, "sets": number, "reps": string, "rest": string, "formNote": string }],
+  "coolDown": [{ "exercise": string, "duration": string }],
+  "totalDurationMins": number,
+  "difficulty": string,
+  "notes": string
+}
+Be specific about sets/reps based on fitness level. Include 3-5 main exercises. Always prioritize safety.`;
 
-  const userMessage = `Create a ${input.durationMins}-minute ${input.level} workout plan with the following details:
-- Goal: ${input.goal}
-- Available equipment: ${input.equipment.join(", ")}
-${input.focus ? `- Focus area: ${input.focus}` : ""}
+  const user = `Goal: ${input.goal}
+Level: ${input.level}
+Equipment: ${input.equipment.join(", ")}
+Duration: ${input.durationMins} minutes${input.focus ? `\nFocus: ${input.focus}` : ""}`;
 
-Include: warm-up (5 min), main workout with exercise names, sets, reps, rest periods, and a cool-down (5 min). Add brief form notes for key exercises.`;
-
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userMessage }],
-  });
-
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  const raw = await chat(system, user);
+  return parseJson<GeneratedWorkout>(raw);
 }
 
-export async function generateMindsetCoaching(input: {
+export async function generateMindset(input: {
   mood: string;
   challenge?: string;
-}): Promise<string> {
-  const systemPrompt = `You are a sports psychologist and mindset coach specializing in athletic performance and personal growth. Provide warm, direct, actionable coaching that acknowledges feelings without being dismissive, then pivots to practical mental strategies. Keep responses to 2-3 focused paragraphs. Never be preachy or generic.`;
+}): Promise<GeneratedMindset> {
+  const system = `You are a sports psychologist and mindset coach. Return a JSON object with this exact shape:
+{
+  "affirmation": string,
+  "coaching": string,
+  "actionStep": string,
+  "focus": string
+}
+affirmation: one powerful sentence. coaching: 2-3 sentences of direct, actionable coaching. actionStep: one concrete thing to do right now. focus: one word or short phrase for today's mental focus. Be warm but direct. Never generic.`;
 
-  const userMessage = `My current mood/mental state: ${input.mood}${input.challenge ? `\nCurrent challenge: ${input.challenge}` : ""}
+  const user = `Mood: ${input.mood}${input.challenge ? `\nChallenge: ${input.challenge}` : ""}`;
 
-Please give me targeted mindset coaching for today's training.`;
-
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 512,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userMessage }],
-  });
-
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  const raw = await chat(system, user);
+  return parseJson<GeneratedMindset>(raw);
 }
 
-export async function generateMusicRecommendations(input: {
+export async function categorizeMusic(input: {
   workoutType: string;
   tempo?: string;
   genre?: string;
-}): Promise<string> {
-  const systemPrompt = `You are an expert music curator who specializes in workout and athletic performance playlists. Recommend 4-5 specific genres, artists, and playlist vibes that match the workout context. For each recommendation, include the genre, 2-3 artist names, the energy/vibe description, and why it works for this workout type. Format as a clean numbered list.`;
+}): Promise<CategorizedMusic> {
+  const system = `You are an expert workout music curator. Return a JSON object with this exact shape:
+{
+  "recommendations": [
+    {
+      "genre": string,
+      "artists": [string],
+      "vibe": string,
+      "bpm": string,
+      "reason": string
+    }
+  ],
+  "playlistVibe": string
+}
+Include 4-5 recommendations. Each artists array should have 2-3 names. bpm should be a range like "120-140 BPM". playlistVibe is a 1-sentence description of the overall energy.`;
 
-  const userMessage = `Recommend music for: ${input.workoutType}${input.tempo ? ` (${input.tempo} tempo)` : ""}${input.genre ? `, preferably ${input.genre} style` : ""}.`;
+  const user = `Workout type: ${input.workoutType}${input.tempo ? `\nTempo preference: ${input.tempo}` : ""}${input.genre ? `\nGenre preference: ${input.genre}` : ""}`;
 
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 512,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userMessage }],
-  });
-
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  const raw = await chat(system, user);
+  return parseJson<CategorizedMusic>(raw);
 }
 
-export async function generateCoachReply(input: {
+export async function coachAssistant(input: {
   message: string;
   context?: string;
-}): Promise<string> {
-  const systemPrompt = `You are a certified personal trainer and nutrition coach with 10+ years of experience. Provide evidence-based, practical advice on training, nutrition, recovery, and performance. Always prioritize safety — for any medical, injury, or health condition questions, recommend consulting a licensed healthcare professional. Be direct, specific, and helpful. Keep responses concise (3-5 sentences for simple questions, more for complex ones).`;
+}): Promise<CoachResponse> {
+  const system = `You are a certified personal trainer and nutrition coach. Return a JSON object with this exact shape:
+{
+  "reply": string,
+  "tips": [string],
+  "safetyNote": string
+}
+reply: direct, evidence-based answer (2-4 sentences). tips: 2-3 practical bullet points (omit if not applicable, use empty array). safetyNote: only include if there is a genuine safety consideration, otherwise use null. For medical questions always recommend consulting a healthcare professional.`;
 
-  const userContent = input.context
-    ? `User context: ${input.context}\n\nQuestion: ${input.message}`
-    : input.message;
+  const user = `${input.context ? `Context: ${input.context}\n\n` : ""}Question: ${input.message}`;
 
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 768,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userContent }],
-  });
-
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  const raw = await chat(system, user);
+  return parseJson<CoachResponse>(raw);
 }

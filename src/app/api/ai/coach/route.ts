@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { generateCoachReply } from "@/lib/ai";
+import { coachAssistant } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +37,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const reply = await generateCoachReply(parsed.data);
-
-    return NextResponse.json({ success: true, data: { reply } });
+    const response = await coachAssistant(parsed.data);
+    return NextResponse.json({ success: true, data: response });
   } catch (error) {
     console.error("[api/ai/coach] Error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

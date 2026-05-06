@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { generateWorkoutPlan } from "@/lib/ai";
+import { generateWorkout } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -40,9 +40,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const plan = await generateWorkoutPlan(parsed.data);
-
-    return NextResponse.json({ success: true, data: { plan } });
+    const workout = await generateWorkout(parsed.data);
+    return NextResponse.json({ success: true, data: workout });
   } catch (error) {
     console.error("[api/ai/workout] Error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
