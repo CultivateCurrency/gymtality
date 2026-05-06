@@ -1,52 +1,44 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-function getToken(): string | null {
-  // Read from zustand-persisted localStorage key
-  try {
-    const raw = localStorage.getItem("gymtality-auth");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.state?.accessToken ?? null;
-  } catch {
-    return null;
-  }
-}
+import { useAuthStore } from "@/store/auth-store";
 
 interface ApiResponse<T> {
   data: T;
   meta?: Record<string, unknown>;
 }
 
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
-  const token = getToken();
+// Calls /api/auth/refresh — sets new httpOnly cookies server-side and returns success flag.
+// The proxy reads the new gymtality_at cookie on the next request automatically.
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/auth/refresh", { method: "POST" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
-  const res = await fetch(fullUrl, {
+async function apiFetch<T>(url: string, options?: RequestInit, retried = false): Promise<T> {
+  const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
     ...options,
   });
 
   if (res.status === 401) {
-    // Only redirect if user has a real (non-guest) session
-    try {
-      const raw = localStorage.getItem("gymtality-auth");
-      const parsed = raw ? JSON.parse(raw) : null;
-      const isGuest = parsed?.state?.user?.role === "GUEST";
-      if (!isGuest) {
-        localStorage.removeItem("gymtality-auth");
-        document.cookie = "gymtality_auth=; path=/; max-age=0";
-        document.cookie = "gymtality_role=; path=/; max-age=0";
-        window.location.href = "/login";
+    if (!retried) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return apiFetch<T>(url, options, true);
       }
-    } catch {
+    }
+
+    const user = useAuthStore.getState().user;
+    if (user?.role !== "GUEST") {
+      useAuthStore.getState().logout();
       window.location.href = "/login";
     }
     throw new Error("Session expired. Please log in again.");
@@ -57,31 +49,26 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   return json.data as T;
 }
 
-async function apiFetchWithMeta<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
-  const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
-  const token = getToken();
-
-  const res = await fetch(fullUrl, {
+async function apiFetchWithMeta<T>(url: string, options?: RequestInit, retried = false): Promise<ApiResponse<T>> {
+  const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
     ...options,
   });
 
   if (res.status === 401) {
-    try {
-      const raw = localStorage.getItem("gymtality-auth");
-      const parsed = raw ? JSON.parse(raw) : null;
-      const isGuest = parsed?.state?.user?.role === "GUEST";
-      if (!isGuest) {
-        localStorage.removeItem("gymtality-auth");
-        document.cookie = "gymtality_auth=; path=/; max-age=0";
-        document.cookie = "gymtality_role=; path=/; max-age=0";
-        window.location.href = "/login";
+    if (!retried) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return apiFetchWithMeta<T>(url, options, true);
       }
-    } catch {
+    }
+
+    const user = useAuthStore.getState().user;
+    if (user?.role !== "GUEST") {
+      useAuthStore.getState().logout();
       window.location.href = "/login";
     }
     throw new Error("Session expired. Please log in again.");

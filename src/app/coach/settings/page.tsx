@@ -30,7 +30,6 @@ import {
   FileText,
   LogOut,
   ChevronRight,
-  Trash2,
   CheckCircle2,
   X,
   Loader2,
@@ -60,21 +59,27 @@ interface UserProfile {
   email: string;
   profilePhoto: string | null;
   role: string;
+  coachProfile?: { category?: string };
+}
+
+interface BlockedUser {
+  id: string;
+  fullName: string;
 }
 
 export default function CoachSettingsPage() {
   const router = useRouter();
   const { user: storeUser, logout } = useAuthStore();
   const { data: profile, loading: profileLoading } = useApi<UserProfile>("/api/users/me");
+  const { data: certsData } = useApi<{ url: string; name: string; status: string; uploadedAt: string }[]>("/api/coach/certifications");
+  const { data: blockedData } = useApi<BlockedUser[]>("/api/users/me/blocked");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Workout Trainer");
   const [certifications, setCertifications] = useState<
-    { name: string; status: string; uploadedAt: string }[]
+    { url: string; name: string; status: string; uploadedAt: string }[]
   >([]);
-  const [blockedAccounts, setBlockedAccounts] = useState<
-    { id: number; name: string; reason: string; blockedAt: string }[]
-  >([]);
+  const [blockedAccounts, setBlockedAccounts] = useState<BlockedUser[]>([]);
   const [saving, setSaving] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { upload, uploading } = useUpload();
@@ -92,11 +97,24 @@ export default function CoachSettingsPage() {
       setFullName(profile.fullName || "");
       setEmail(profile.email || "");
       setProfilePhoto(profile.profilePhoto || null);
+      if (profile.coachProfile?.category) {
+        setSelectedCategory(profile.coachProfile.category);
+      }
     } else if (storeUser) {
       setFullName(storeUser.fullName || "");
       setEmail(storeUser.email || "");
     }
   }, [profile, storeUser]);
+
+  // Load certifications on mount
+  useEffect(() => {
+    if (certsData) setCertifications(certsData);
+  }, [certsData]);
+
+  // Load blocked accounts on mount
+  useEffect(() => {
+    if (blockedData) setBlockedAccounts(blockedData);
+  }, [blockedData]);
 
   const getInitials = (name: string) => {
     if (!name) return "?";
@@ -112,18 +130,33 @@ export default function CoachSettingsPage() {
     try {
       const result = await upload(file, "profile-photos", "image");
       setProfilePhoto(result.url);
-    } catch {
-      // error handled by hook
+      // Auto-save to backend immediately
+      await apiFetch("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ profilePhoto: result.url }),
+      });
+      toast.success("Profile photo updated");
+    } catch (err: any) {
+      setProfilePhoto(null);
+      toast.error(err.message || "Failed to update profile photo");
     }
   };
 
   const handleCertUpload = async (file: File) => {
     try {
       const result = await upload(file, "certifications", "document");
-      setCertifications([
-        ...certifications,
-        { name: result.filename, status: "Pending Review", uploadedAt: new Date().toLocaleDateString() },
-      ]);
+      const newCert = { url: result.url, name: result.filename, status: "Pending Review", uploadedAt: new Date().toLocaleDateString() };
+      setCertifications([...certifications, newCert]);
+      // Save certification URL to backend
+      try {
+        await apiFetch("/api/coach/certifications", {
+          method: "POST",
+          body: JSON.stringify({ url: result.url, filename: result.filename }),
+        });
+        toast.success("Certification uploaded and saved");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to save certification");
+      }
     } catch {
       // error handled by hook
     }
@@ -136,13 +169,23 @@ export default function CoachSettingsPage() {
     try {
       await apiFetch("/api/users/me", {
         method: "PATCH",
-        body: JSON.stringify({ fullName, profilePhoto }),
+        body: JSON.stringify({ fullName, category: selectedCategory }),
       });
       toast.success("Profile saved successfully");
     } catch (err: any) {
       toast.error(err.message || "Failed to save profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUnblock = async (userId: string) => {
+    try {
+      await apiFetch(`/api/users/${userId}/block`, { method: "DELETE" });
+      setBlockedAccounts((prev) => prev.filter((u) => u.id !== userId));
+      toast.success("User unblocked");
+    } catch {
+      toast.error("Failed to unblock user");
     }
   };
 
@@ -430,15 +473,13 @@ export default function CoachSettingsPage() {
                   className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg"
                 >
                   <div>
-                    <p className="text-sm font-medium text-white">{account.name}</p>
-                    <p className="text-xs text-zinc-500">
-                      {account.reason} - Blocked {account.blockedAt}
-                    </p>
+                    <p className="text-sm font-medium text-white">{account.fullName}</p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     className="border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-red-400"
+                    onClick={() => handleUnblock(account.id)}
                   >
                     <X className="h-3 w-3 mr-1" />
                     Unblock

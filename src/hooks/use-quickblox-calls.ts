@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { loadQuickBloxSDK, isChatConnected, setChatConnected } from "@/lib/quickblox-client";
 
 type CallType = "audio" | "video";
 type CallState = "idle" | "calling" | "incoming" | "active";
@@ -32,26 +33,6 @@ interface QBSession {
 let QB: any = null;
 let qbInitialized = false;
 
-async function loadQuickBloxSDK(): Promise<any> {
-  if (QB) return QB;
-  // Load from CDN to avoid webpack bundling issues with nativescript deps
-  return new Promise((resolve, reject) => {
-    if (typeof window === "undefined") return reject("Not in browser");
-    if ((window as any).QB) {
-      QB = (window as any).QB;
-      return resolve(QB);
-    }
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/quickblox@2.23.0/quickblox.min.js";
-    script.onload = () => {
-      QB = (window as any).QB;
-      resolve(QB);
-    };
-    script.onerror = () => reject("Failed to load QuickBlox SDK");
-    document.head.appendChild(script);
-  });
-}
-
 export function useQuickBloxCalls(qbToken: string | null, qbUserId: number | null) {
   const [callInfo, setCallInfo] = useState<CallInfo>({
     type: "audio",
@@ -71,7 +52,7 @@ export function useQuickBloxCalls(qbToken: string | null, qbUserId: number | nul
     if (qbInitialized || !qbToken || !qbUserId) return;
 
     try {
-      await loadQuickBloxSDK();
+      QB = await loadQuickBloxSDK();
 
       const appId = process.env.NEXT_PUBLIC_QUICKBLOX_APP_ID;
       const accountKey = process.env.NEXT_PUBLIC_QUICKBLOX_ACCOUNT_KEY;
@@ -83,7 +64,15 @@ export function useQuickBloxCalls(qbToken: string | null, qbUserId: number | nul
         webrtc: { answerTimeInterval: 30, disconnectTimeInterval: 10 },
       });
 
-      // Connect to chat for WebRTC signaling
+      // If chat is already connected (from useQuickBlox hook), skip QB.chat.connect()
+      // Just register WebRTC listeners on the existing connection
+      if (isChatConnected() && QB.chat.isConnected) {
+        qbInitialized = true;
+        setupWebRTCListeners();
+        return;
+      }
+
+      // Otherwise, connect to chat for WebRTC signaling
       const userCredentials = {
         userId: qbUserId,
         password: `qb_${qbUserId}_gymtality`,
@@ -95,52 +84,58 @@ export function useQuickBloxCalls(qbToken: string | null, qbUserId: number | nul
           return;
         }
 
+        setChatConnected(true);
         qbInitialized = true;
-
-        // Set up WebRTC event handlers
-        QB.webrtc.onCallListener = (session: QBSession, extension: any) => {
-          sessionRef.current = session;
-          setCallInfo({
-            type: session.callType === QB.webrtc.CallType.VIDEO ? "video" : "audio",
-            state: "incoming",
-            callerName: extension.callerName || `User ${session.initiatorID}`,
-            callerId: session.initiatorID,
-            startTime: null,
-          });
-        };
-
-        QB.webrtc.onAcceptCallListener = (session: QBSession, userId: number, extension: any) => {
-          setCallInfo((prev) => ({ ...prev, state: "active", startTime: Date.now() }));
-        };
-
-        QB.webrtc.onRejectCallListener = (session: QBSession, userId: number, extension: any) => {
-          cleanupCall();
-        };
-
-        QB.webrtc.onStopCallListener = (session: QBSession, userId: number, extension: any) => {
-          cleanupCall();
-        };
-
-        QB.webrtc.onRemoteStreamListener = (session: QBSession, userId: number, stream: MediaStream) => {
-          setRemoteStream(stream);
-        };
-
-        QB.webrtc.onSessionConnectionStateChangedListener = (
-          session: QBSession,
-          userId: number,
-          state: any
-        ) => {
-          // Handle disconnection
-          if (state === QB.webrtc.SessionConnectionState.CLOSED ||
-              state === QB.webrtc.SessionConnectionState.FAILED) {
-            cleanupCall();
-          }
-        };
+        setupWebRTCListeners();
       });
     } catch (err) {
       console.error("Failed to init QB WebRTC:", err);
     }
   }, [qbToken, qbUserId]);
+
+  // Set up WebRTC event listeners
+  const setupWebRTCListeners = useCallback(() => {
+    if (!QB) return;
+
+    QB.webrtc.onCallListener = (session: QBSession, extension: any) => {
+      sessionRef.current = session;
+      setCallInfo({
+        type: session.callType === QB.webrtc.CallType.VIDEO ? "video" : "audio",
+        state: "incoming",
+        callerName: extension.callerName || `User ${session.initiatorID}`,
+        callerId: session.initiatorID,
+        startTime: null,
+      });
+    };
+
+    QB.webrtc.onAcceptCallListener = (session: QBSession, userId: number, extension: any) => {
+      setCallInfo((prev) => ({ ...prev, state: "active", startTime: Date.now() }));
+    };
+
+    QB.webrtc.onRejectCallListener = (session: QBSession, userId: number, extension: any) => {
+      cleanupCall();
+    };
+
+    QB.webrtc.onStopCallListener = (session: QBSession, userId: number, extension: any) => {
+      cleanupCall();
+    };
+
+    QB.webrtc.onRemoteStreamListener = (session: QBSession, userId: number, stream: MediaStream) => {
+      setRemoteStream(stream);
+    };
+
+    QB.webrtc.onSessionConnectionStateChangedListener = (
+      session: QBSession,
+      userId: number,
+      state: any
+    ) => {
+      // Handle disconnection
+      if (state === QB.webrtc.SessionConnectionState.CLOSED ||
+          state === QB.webrtc.SessionConnectionState.FAILED) {
+        cleanupCall();
+      }
+    };
+  }, []);
 
   // Start a call
   const startCall = useCallback(

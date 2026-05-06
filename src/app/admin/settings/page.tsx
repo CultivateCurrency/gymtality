@@ -32,6 +32,7 @@ import {
   Save,
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
+import { useUpload } from "@/hooks/use-upload";
 import { toast } from "sonner";
 
 interface TenantSettings {
@@ -65,17 +66,20 @@ const announcements = [
 export default function AdminSettingsPage() {
   const { data: tenant, loading, error, refetch } = useApi<TenantSettings>("/api/admin/settings");
   const [gymName, setGymName] = useState("");
+  const [logo, setLogo] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState("#f97316");
   const [accentColor, setAccentColor] = useState("#1A1A2E");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const { upload, uploading: logoUploading } = useUpload();
 
   // Populate form when tenant data loads
   useEffect(() => {
     if (tenant) {
       setGymName(tenant.name);
+      setLogo(tenant.logo);
       setPrimaryColor(tenant.primaryColor);
       setAccentColor(tenant.accentColor);
     }
@@ -145,8 +149,8 @@ export default function AdminSettingsPage() {
               {/* Logo */}
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                  {tenant?.logo ? (
-                    <img src={tenant.logo} alt="Logo" className="w-full h-full object-cover" />
+                  {logo ? (
+                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-2xl font-bold text-orange-500">
                       {gymName?.charAt(0)?.toUpperCase() || "G"}
@@ -156,15 +160,49 @@ export default function AdminSettingsPage() {
                 <div>
                   <p className="text-sm text-zinc-300">Platform Logo</p>
                   <p className="text-xs text-zinc-500">PNG or SVG, 256x256px recommended.</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                    onClick={() => toast.info("Logo upload — add your logo URL in Platform Name settings below")}
-                  >
-                    <Upload className="h-3 w-3 mr-2" />
-                    Upload Logo
-                  </Button>
+                  <label className="mt-2 inline-flex">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      disabled={logoUploading}
+                    >
+                      {logoUploading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-3 w-3 mr-2" />
+                          Upload Logo
+                        </>
+                      )}
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/png,image/svg+xml,image/webp"
+                      className="hidden"
+                      disabled={logoUploading}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const result = await upload(file, "logos", "image");
+                            setLogo(result.url);
+                            await apiFetch("/api/admin/settings", {
+                              method: "PUT",
+                              body: JSON.stringify({ logo: result.url }),
+                            });
+                            toast.success("Logo updated successfully");
+                            refetch();
+                          } catch (err: any) {
+                            toast.error(err.message || "Failed to upload logo");
+                          }
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
 

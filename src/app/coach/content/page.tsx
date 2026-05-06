@@ -88,6 +88,14 @@ export default function CoachContentPage() {
   const [selectedCategory, setSelectedCategory] = useState("Workouts");
   const [difficulty, setDifficulty] = useState("Beginner");
   const [repetitions, setRepetitions] = useState(false);
+
+  // Edit state
+  const [editingPlan, setEditingPlan] = useState<WorkoutPlan | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editDifficulty, setEditDifficulty] = useState("");
+  const [saving, setSaving] = useState(false);
   const [exercises, setExercises] = useState([
     { name: "", description: "", bodyParts: [] as string[], equipment: "", duration: "", sets: "", reps: "", videoUrl: "" },
   ]);
@@ -173,6 +181,37 @@ export default function CoachContentPage() {
       refetch();
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete plan");
+    }
+  };
+
+  const openEdit = (plan: WorkoutPlan) => {
+    setEditingPlan(plan);
+    setEditName(plan.name);
+    setEditDescription(plan.description ?? "");
+    setEditCategory(plan.category ?? "");
+    setEditDifficulty(plan.difficulty ?? "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPlan || !editName.trim()) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/api/workouts/plans/${editingPlan.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: editName.trim(),
+          description: editDescription,
+          category: editCategory,
+          difficulty: editDifficulty,
+        }),
+      });
+      toast.success("Plan updated");
+      setEditingPlan(null);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update plan");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -530,6 +569,74 @@ export default function CoachContentPage() {
         </CardContent>
       </Card>
 
+      {/* Edit Plan Modal */}
+      {editingPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md space-y-4 mx-4">
+            <h3 className="text-lg font-bold text-white">Edit Plan</h3>
+            <div className="space-y-1.5">
+              <label className="text-sm text-zinc-300">Plan Name</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm text-zinc-300">Description</label>
+              <Textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="bg-zinc-800 border-zinc-700 text-white min-h-[80px]"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm text-zinc-300">Category</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-sm"
+                >
+                  {categories.map((c) => (
+                    <option key={c.label} value={c.label}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm text-zinc-300">Difficulty</label>
+                <select
+                  value={editDifficulty}
+                  onChange={(e) => setEditDifficulty(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-sm"
+                >
+                  {difficultyLevels.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                onClick={() => setEditingPlan(null)}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={handleSaveEdit}
+                disabled={saving || !editName.trim()}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Existing Plans */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
@@ -593,7 +700,7 @@ export default function CoachContentPage() {
                     <span className="text-xs text-zinc-500 flex items-center gap-1">
                       <Clock className="h-3 w-3" /> {new Date(plan.createdAt).toLocaleDateString()}
                     </span>
-                    <button className="text-zinc-500 hover:text-zinc-300 transition">
+                    <button onClick={() => openEdit(plan)} className="text-zinc-500 hover:text-zinc-300 transition">
                       <Edit3 className="h-4 w-4" />
                     </button>
                     <button

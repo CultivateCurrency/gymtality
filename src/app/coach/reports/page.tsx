@@ -81,7 +81,7 @@ export default function CoachReportsPage() {
   const error = null;
   const refetch = () => {};
   const { mutate: submitReport, loading: submitting, error: submitError } = {
-    mutate: async () => console.log("Reports feature coming soon"),
+    mutate: async () => {},
     loading: false,
     error: null,
   };

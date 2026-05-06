@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const OAUTH_BASE = process.env.NEXT_PUBLIC_OAUTH_URL || "";
 
 // Reads ?error= param from the URL after Google OAuth redirect and shows a toast.
 // Must be inside Suspense because useSearchParams() suspends during SSR.
@@ -31,6 +31,9 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
+  const [step, setStep] = useState<"login" | "mfa">("login");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [otp, setOtp] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,7 +46,8 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      // Call Next.js API route (sets httpOnly cookies server-side)
+      const res = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -59,8 +63,16 @@ export default function LoginPage() {
         return;
       }
 
-      const { user, accessToken, refreshToken } = data.data;
-      login(user, accessToken, refreshToken);
+      // 2FA required — show OTP input
+      if (data.needsMFA) {
+        setPendingEmail(form.email.trim().toLowerCase());
+        setStep("mfa");
+        return;
+      }
+
+      // Store user in Zustand; tokens are in httpOnly cookies (never in JS)
+      const { user } = data.data;
+      login(user);
 
       if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
         router.push("/admin/dashboard");
@@ -75,6 +87,95 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  const handleMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/verify-2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail, otp }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setError(data.error || "Invalid or expired code. Please try again.");
+        return;
+      }
+
+      const { user } = data.data;
+      login(user);
+
+      if (["ADMIN", "OWNER", "SUPER_ADMIN"].includes(user.role)) {
+        router.push("/admin/dashboard");
+      } else if (user.role === "COACH") {
+        router.push("/coach/dashboard");
+      } else {
+        router.push("/member/dashboard");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // MFA step — shown after successful password verification when 2FA is enabled
+  if (step === "mfa") {
+    return (
+      <div className="w-full">
+        <div className="text-center mb-7">
+          <h1 className="text-2xl font-bold text-white">Check your email</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            Enter the 6-digit code sent to <span className="text-zinc-300">{pendingEmail}</span>
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleMfa} className="space-y-4">
+          <div>
+            <label className="block text-[13px] font-medium text-zinc-400 mb-1.5">Verification code</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "")); setError(""); }}
+              required
+              autoFocus
+              className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 focus:border-orange-500/50 rounded-xl text-[20px] text-white placeholder-zinc-600 outline-none transition-colors tracking-[0.5em] text-center"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading || otp.length !== 6}
+            className="w-full py-3 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-bold text-[14px] rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
+          >
+            {isLoading ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : "Verify Code"}
+          </button>
+        </form>
+
+        <button
+          onClick={() => { setStep("login"); setOtp(""); setError(""); }}
+          className="mt-4 w-full text-center text-[13px] text-zinc-500 hover:text-zinc-300 transition-colors"
+        >
+          Back to sign in
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -91,7 +192,7 @@ export default function LoginPage() {
       {/* Social login */}
       <div className="flex gap-3 mb-6">
         <a
-          href={`${API_URL}/api/auth/google`}
+          href={`${OAUTH_BASE}/api/auth/google`}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[13px] font-medium text-zinc-300 hover:text-white transition-all"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -103,7 +204,7 @@ export default function LoginPage() {
           Google
         </a>
         <a
-          href={`${API_URL}/api/auth/apple`}
+          href={`${OAUTH_BASE}/api/auth/apple`}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[13px] font-medium text-zinc-300 hover:text-white transition-all"
         >
           <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">

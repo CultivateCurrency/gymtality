@@ -160,9 +160,8 @@ export default function CoachEarningsPage() {
                 <p className="text-sm text-zinc-400">Total Earnings</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-3 text-xs text-green-400">
-              <ArrowUpRight className="h-3 w-3" />
-              <span>+18% from last period</span>
+            <div className="flex items-center gap-1 mt-3 text-xs text-zinc-500">
+              <span>All time net earnings</span>
             </div>
           </CardContent>
         </Card>

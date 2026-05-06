@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useApi, apiFetch } from "@/hooks/use-api";
 import { useUpload } from "@/hooks/use-upload";
+import { toast } from "sonner";
 
 // ---- Types ----
 interface WorkoutPlan {
@@ -77,6 +78,7 @@ interface Book {
   subcategory: string | null;
   coverImage: string | null;
   about: string | null;
+  fileUrl: string | null;
 }
 
 interface Album {
@@ -188,18 +190,29 @@ export default function AdminContentPage() {
   const books = booksData || [];
   const [bookModal, setBookModal] = useState(false);
   const [bookEditing, setBookEditing] = useState<Book | null>(null);
-  const [bookForm, setBookForm] = useState({ title: "", author: "", language: "English", category: "", subcategory: "", coverImage: "", about: "" });
+  const [bookForm, setBookForm] = useState({ title: "", author: "", language: "English", category: "", subcategory: "", coverImage: "", about: "", fileUrl: "" });
   const [bookDeleteConfirm, setBookDeleteConfirm] = useState<string | null>(null);
 
   async function saveBook() {
-    const payload = { ...bookForm, subcategory: bookForm.subcategory || null, coverImage: bookForm.coverImage || null, about: bookForm.about || null };
-    if (bookEditing) {
-      await apiFetch(`/api/admin/books/${bookEditing.id}`, { method: "PUT", body: JSON.stringify(payload) });
-    } else {
-      await apiFetch("/api/admin/books", { method: "POST", body: JSON.stringify(payload) });
+    try {
+      const payload = {
+        ...bookForm,
+        subcategory: bookForm.subcategory || null,
+        coverImage: bookForm.coverImage || null,
+        about: bookForm.about || null,
+        fileUrl: bookForm.fileUrl || null,
+      };
+      if (bookEditing) {
+        await apiFetch(`/api/admin/books/${bookEditing.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+      } else {
+        await apiFetch("/api/admin/books", { method: "POST", body: JSON.stringify(payload) });
+      }
+      toast.success(bookEditing ? "Book updated" : "Book added");
+      setBookModal(false); setBookEditing(null);
+      refetchBooks();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save book");
     }
-    setBookModal(false); setBookEditing(null);
-    refetchBooks();
   }
 
   async function deleteBook(id: string) {
@@ -319,7 +332,7 @@ export default function AdminContentPage() {
           </Button>
         )}
         {activeTab === "books" && (
-          <Button onClick={() => { setBookEditing(null); setBookForm({ title: "", author: "", language: "English", category: "", subcategory: "", coverImage: "", about: "" }); setBookModal(true); }} className="bg-orange-500 hover:bg-orange-600 text-white">
+          <Button onClick={() => { setBookEditing(null); setBookForm({ title: "", author: "", language: "English", category: "", subcategory: "", coverImage: "", about: "", fileUrl: "" }); setBookModal(true); }} className="bg-orange-500 hover:bg-orange-600 text-white">
             <Plus className="h-4 w-4 mr-2" />Add Book
           </Button>
         )}
@@ -546,7 +559,7 @@ export default function AdminContentPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
                       variant="outline" size="sm"
-                      onClick={() => { setBookEditing(book); setBookForm({ title: book.title, author: book.author, language: book.language, category: book.category, subcategory: book.subcategory || "", coverImage: book.coverImage || "", about: book.about || "" }); setBookModal(true); }}
+                      onClick={() => { setBookEditing(book); setBookForm({ title: book.title, author: book.author, language: book.language, category: book.category, subcategory: book.subcategory || "", coverImage: book.coverImage || "", about: book.about || "", fileUrl: book.fileUrl || "" }); setBookModal(true); }}
                       className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white"
                     >
                       <Edit3 className="h-3 w-3" />
@@ -858,6 +871,46 @@ export default function AdminContentPage() {
               </div>
             </div>
           </div>
+          {/* PDF Upload */}
+          <div>
+            <Label>PDF File (optional)</Label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                className="bg-zinc-800 border-zinc-700 text-white flex-1"
+                value={bookForm.fileUrl}
+                onChange={e => setBookForm({ ...bookForm, fileUrl: e.target.value })}
+                placeholder="URL or upload PDF..."
+              />
+              <label className="shrink-0">
+                <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer">
+                  <span>{fileUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}</span>
+                </Button>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      try {
+                        const r = await uploadFile(f, "books", "document");
+                        setBookForm(prev => ({ ...prev, fileUrl: r.url }));
+                        toast.success("PDF uploaded");
+                      } catch (err: any) {
+                        toast.error(err.message || "PDF upload failed");
+                      }
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            {bookForm.fileUrl && (
+              <a href={bookForm.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-orange-400 hover:underline mt-1 inline-block">
+                Preview PDF
+              </a>
+            )}
+          </div>
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setBookModal(false)} className="text-zinc-400">Cancel</Button>
             <Button onClick={saveBook} disabled={!bookForm.title || !bookForm.author} className="bg-orange-500 hover:bg-orange-600 text-white">

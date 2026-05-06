@@ -2,19 +2,6 @@
 
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-function getToken(): string | null {
-  try {
-    const raw = localStorage.getItem("gymtality-auth");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.state?.accessToken ?? null;
-  } catch {
-    return null;
-  }
-}
-
 interface UploadResult {
   url: string;
   key: string;
@@ -53,11 +40,10 @@ export function useUpload(): UseUploadReturn {
 
       setProgress(30);
 
-      const token = getToken();
-      // Do NOT set Content-Type — let the browser set multipart/form-data with boundary
-      const res = await fetch(`${API_URL}/api/storage/upload`, {
+      // Do NOT set Content-Type — let the browser set multipart/form-data with boundary.
+      // Authorization is injected by the Next.js proxy from the gymtality_at httpOnly cookie.
+      const res = await fetch("/api/upload", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 

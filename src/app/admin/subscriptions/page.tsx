@@ -121,7 +121,6 @@ const PLAN_TIER_CONFIG = [
 
 export default function AdminSubscriptionsPage() {
   const [showCreatePlan, setShowCreatePlan] = useState(false);
-  const [showCreateCoupon, setShowCreateCoupon] = useState(false);
 
   // All active subscribers (for total count)
   const {
@@ -360,59 +359,19 @@ export default function AdminSubscriptionsPage() {
                 Coupon Management
               </CardTitle>
               <CardDescription className="text-zinc-400">
-                Create and manage discount codes. (Sample data — coupons API coming soon.)
+                Create and manage discount codes for subscription plans.
               </CardDescription>
             </div>
-            <Button
-              onClick={() => setShowCreateCoupon(!showCreateCoupon)}
-              variant="outline"
-              size="sm"
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Coupon
-            </Button>
+            <Badge variant="outline" className="border-zinc-600 text-zinc-400">
+              Coming in v1.1
+            </Badge>
           </div>
         </CardHeader>
-        {showCreateCoupon && (
-          <CardContent className="border-t border-zinc-800 pt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm text-zinc-300">Coupon Code</label>
-                <Input placeholder="e.g., SUMMER30" className="bg-zinc-800 border-zinc-700 text-white" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-zinc-300">Discount Type</label>
-                <select className="w-full rounded-md bg-zinc-800 border border-zinc-700 text-white px-3 py-2 text-sm">
-                  <option>Percentage</option>
-                  <option>Fixed Amount</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-zinc-300">Discount Value</label>
-                <Input placeholder="e.g., 25" className="bg-zinc-800 border-zinc-700 text-white" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm text-zinc-300">Max Uses (optional)</label>
-                <Input type="number" placeholder="Unlimited" className="bg-zinc-800 border-zinc-700 text-white" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-zinc-300">Expires (optional)</label>
-                <Input type="date" className="bg-zinc-800 border-zinc-700 text-white" />
-              </div>
-            </div>
-            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-              Create Coupon
-            </Button>
-          </CardContent>
-        )}
-        <CardContent className={showCreateCoupon ? "pt-4" : ""}>
+        <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Percent className="h-10 w-10 text-zinc-600 mb-3" />
-            <p className="text-zinc-400 text-sm font-medium">No coupons yet</p>
-            <p className="text-zinc-600 text-xs mt-1">Create your first discount code using the button above.</p>
+            <p className="text-zinc-400 text-sm font-medium">Coupon management coming soon</p>
+            <p className="text-zinc-600 text-xs mt-1">Discount codes will be available in the next release.</p>
           </div>
         </CardContent>
       </Card>

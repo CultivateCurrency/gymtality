@@ -15,14 +15,11 @@ interface AuthUser {
 
 interface AuthStore {
   user: AuthUser | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   pendingEmail: string | null;
 
-  login: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  login: (user: AuthUser) => void;
   loginAsGuest: () => void;
   logout: () => void;
-  setTokens: (accessToken: string, refreshToken?: string) => void;
   setPendingEmail: (email: string | null) => void;
 }
 
@@ -30,24 +27,14 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
-      refreshToken: null,
       pendingEmail: null,
 
-      login: (user, accessToken, refreshToken) => {
-        // Set a cookie so Next.js middleware can check auth without reading localStorage
-        if (typeof document !== "undefined") {
-          document.cookie = `gymtality_auth=1; path=/; SameSite=Lax; max-age=${60 * 60 * 24 * 30}`;
-          document.cookie = `gymtality_role=${user.role}; path=/; SameSite=Lax; max-age=${60 * 60 * 24 * 30}`;
-        }
-        set({ user, accessToken, refreshToken });
+      login: (user) => {
+        // Cookies (at, rt, session, role) are set server-side by /api/auth/login
+        set({ user });
       },
 
       loginAsGuest: () => {
-        if (typeof document !== "undefined") {
-          document.cookie = `gymtality_auth=1; path=/; SameSite=Lax; max-age=${60 * 60 * 2}`;
-          document.cookie = `gymtality_role=GUEST; path=/; SameSite=Lax; max-age=${60 * 60 * 2}`;
-        }
         set({
           user: {
             id: "guest",
@@ -58,21 +45,14 @@ export const useAuthStore = create<AuthStore>()(
             profilePhoto: null,
             tenantId: "",
           },
-          accessToken: null,
-          refreshToken: null,
         });
       },
 
-      logout: () => {
-        if (typeof document !== "undefined") {
-          document.cookie = "gymtality_auth=; path=/; max-age=0";
-          document.cookie = "gymtality_role=; path=/; max-age=0";
-        }
-        set({ user: null, accessToken: null, refreshToken: null });
+      logout: async () => {
+        // Clear httpOnly cookies server-side and revoke refresh tokens in DB
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        set({ user: null });
       },
-
-      setTokens: (accessToken, refreshToken) =>
-        set((s) => ({ accessToken, refreshToken: refreshToken ?? s.refreshToken })),
 
       setPendingEmail: (email) => set({ pendingEmail: email }),
     }),
@@ -80,8 +60,6 @@ export const useAuthStore = create<AuthStore>()(
       name: "gymtality-auth",
       partialize: (s) => ({
         user: s.user,
-        accessToken: s.accessToken,
-        refreshToken: s.refreshToken,
         pendingEmail: s.pendingEmail,
       }),
     }

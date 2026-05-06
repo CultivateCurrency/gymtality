@@ -91,7 +91,7 @@ async function send(to: string, subject: string, html: string) {
       return { success: false, error: error.message };
     }
 
-    console.log(`Email sent to ${to} (id: ${data?.id})`);
+    console.log(`Email sent (id: ${data?.id})`);
     return { success: true, id: data?.id };
   } catch (err: any) {
     console.error("Email send failed:", err);

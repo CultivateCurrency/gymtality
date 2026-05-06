@@ -56,8 +56,10 @@ export default function CoachMessagesPage() {
     loading,
     error,
     activeDialogId,
+    typingUsers,
     selectDialog,
     sendMessage,
+    sendTypingIndicator,
     createDialog,
     searchUsers,
   } = useQuickBlox();
@@ -68,6 +70,7 @@ export default function CoachMessagesPage() {
   const [newChatSearch, setNewChatSearch] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     callInfo,
@@ -394,12 +397,31 @@ export default function CoachMessagesPage() {
               </div>
 
               {/* Message Input */}
+              {/* Typing Indicator */}
+              {Object.values(typingUsers).some(Boolean) && (
+                <div className="px-4 pb-1 flex justify-start">
+                  <div className="bg-zinc-800 rounded-2xl px-4 py-2">
+                    <p className="text-xs text-zinc-400 italic">Typing...</p>
+                  </div>
+                </div>
+              )}
+
               <div className="p-4 border-t border-zinc-800 bg-zinc-900">
                 <div className="flex items-center gap-2">
                   <Input
                     placeholder="Type a message..."
                     value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
+                    onChange={(e) => {
+                      setMessageText(e.target.value);
+                      const recipientQbId = activeDialog?.occupants_ids.find((id) => id !== session?.qbUserId);
+                      if (recipientQbId && activeDialogId) {
+                        sendTypingIndicator(recipientQbId, true);
+                        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                        typingTimerRef.current = setTimeout(() => {
+                          sendTypingIndicator(recipientQbId, false);
+                        }, 2000);
+                      }
+                    }}
                     className="flex-1 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {

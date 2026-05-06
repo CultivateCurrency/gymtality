@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/auth-store";
 import { useApi, useMutation, apiFetch } from "@/hooks/use-api";
 import { toast } from "sonner";
@@ -94,8 +94,18 @@ function formatEventType(type: string) {
 
 export default function CoachSchedulePage() {
   const { user } = useAuthStore();
-  const [availability, setAvailability] = useState(initialAvailability);
+  const [availability, setAvailability] = useState<Record<string, string[]>>(initialAvailability);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+
+  // Load saved availability
+  const { data: availabilityData } = useApi<{ availability: Record<string, string[]> | null }>("/api/coach/availability");
+  useEffect(() => {
+    if (availabilityData?.availability) {
+      setAvailability(availabilityData.availability);
+    }
+  }, [availabilityData]);
 
   // Form state
   const [eventTitle, setEventTitle] = useState("");
@@ -175,8 +185,19 @@ export default function CoachSchedulePage() {
     }
   };
 
-  const handleSaveAvailability = () => {
-    toast.success("Availability preferences saved");
+  const handleSaveAvailability = async () => {
+    setSavingAvailability(true);
+    try {
+      await apiFetch("/api/coach/availability", {
+        method: "PUT",
+        body: JSON.stringify({ availability }),
+      });
+      toast.success("Availability saved");
+    } catch {
+      toast.error("Failed to save availability");
+    } finally {
+      setSavingAvailability(false);
+    }
   };
 
   return (
@@ -374,8 +395,10 @@ export default function CoachSchedulePage() {
             <Button
               className="mt-4 bg-orange-500 hover:bg-orange-600 text-white w-full"
               onClick={handleSaveAvailability}
+              disabled={savingAvailability}
             >
-              Save Availability
+              {savingAvailability ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {savingAvailability ? "Saving..." : "Save Availability"}
             </Button>
           </CardContent>
         </Card>
@@ -474,14 +497,18 @@ export default function CoachSchedulePage() {
                 variant="outline"
                 size="sm"
                 className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm text-zinc-300 font-medium">March 2026</span>
+              <span className="text-sm text-zinc-300 font-medium">
+                {calendarDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              </span>
               <Button
                 variant="outline"
                 size="sm"
                 className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
