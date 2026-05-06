@@ -75,14 +75,10 @@ interface Group {
   _count: { members: number };
 }
 
-interface PostsResponse {
-  posts: Post[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
-}
-
-interface GroupsResponse {
-  groups: Group[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
 }
 
 interface SearchUser {
@@ -126,28 +122,28 @@ export default function CommunityPage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const { upload } = useUpload();
 
-  const { data: postsData, loading: postsLoading, refetch: refetchPosts } = useApi<PostsResponse>(`/api/community/posts?page=${page}&limit=20`);
-  const { data: groupsData, loading: groupsLoading, refetch: refetchGroups } = useApi<GroupsResponse>("/api/community/groups?page=1&limit=20");
+  const { data: postsData, meta: postsMeta, loading: postsLoading, refetch: refetchPosts } = useApi<Post[]>(`/api/community/posts?page=${page}&limit=20`);
+  const { data: groupsData, loading: groupsLoading, refetch: refetchGroups } = useApi<Group[]>("/api/community/groups?page=1&limit=20");
   const { data: searchResults } = useApi<SearchUser[]>(
     discoverSearch.length >= 2 ? `/api/users/search?q=${encodeURIComponent(discoverSearch)}&limit=20` : null
   );
 
   // Append posts when page changes
   useEffect(() => {
-    if (postsData?.posts) {
+    if (postsData) {
       if (page === 1) {
-        setAllPosts(postsData.posts);
-      } else if (allPosts.length > 0 && postsData.posts.length > 0) {
-        const isNewData = !allPosts.some(p => p.id === postsData.posts[0].id);
+        setAllPosts(postsData);
+      } else if (allPosts.length > 0 && postsData.length > 0) {
+        const isNewData = !allPosts.some(p => p.id === postsData[0].id);
         if (isNewData) {
-          setAllPosts([...allPosts, ...postsData.posts]);
+          setAllPosts([...allPosts, ...postsData]);
         }
       }
     }
   }, [postsData, page]);
 
-  const pagination = postsData?.pagination;
-  const hasMorePosts = pagination && page < pagination.totalPages;
+  const postTotal = (postsMeta as PaginationMeta | undefined)?.total ?? 0;
+  const hasMorePosts = allPosts.length < postTotal;
   const posts = searchQuery
     ? allPosts.filter((p) =>
         (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -155,7 +151,7 @@ export default function CommunityPage() {
         p.user.fullName.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : allPosts;
-  const groups = groupsData?.groups ?? [];
+  const groups = groupsData ?? [];
 
   // Debounced search
   const handleSearchChange = (query: string) => {

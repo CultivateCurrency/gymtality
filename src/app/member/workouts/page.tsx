@@ -29,27 +29,24 @@ import { toast } from "sonner";
 const FILTERS = ["All", "Home", "Gym", "Strength", "Cardio", "Yoga", "Meditation", "Mentality"];
 const BODY_PARTS = ["Chest", "Back", "Legs", "Arms", "Core", "Shoulders", "Full Body"];
 
-interface WorkoutsResponse {
-  plans: Array<{
-    id: string;
-    name: string;
-    type: string;
-    category: string | null;
-    difficulty: string | null;
-    durationMinutes: number | null;
-    coverImage: string | null;
-    coach: { id: string; fullName: string; username: string; profilePhoto: string | null };
-    _count: { likes: number; saves: number; sessions: number };
-  }>;
-  pagination: { page: number; limit: number; total: number; totalPages: number };
-}
+type WorkoutPlan = {
+  id: string;
+  name: string;
+  type: string;
+  category: string | null;
+  difficulty: string | null;
+  durationMinutes: number | null;
+  coverImage: string | null;
+  coach: { id: string; fullName: string; username: string; profilePhoto: string | null };
+  _count: { likes: number; saves: number; sessions: number };
+};
 
 export default function WorkoutsPage() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
-  const [allPlans, setAllPlans] = useState<WorkoutsResponse["plans"]>([]);
+  const [allPlans, setAllPlans] = useState<WorkoutPlan[]>([]);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [aiDialogOpen, setAIDialogOpen] = useState(false);
   const [aiPlanType, setAIPlanType] = useState<"GYM" | "HOME">("GYM");
@@ -63,7 +60,7 @@ export default function WorkoutsPage() {
     : "";
 
   const url = `/api/workouts/plans?page=${page}&limit=20${search ? `&search=${encodeURIComponent(search)}` : ""}${filterParam}`;
-  const { data, loading, error } = useApi<WorkoutsResponse>(url);
+  const { data, meta, loading, error } = useApi<WorkoutPlan[]>(url);
 
   // Reset to page 1 when search or filter changes
   const handleFilterChange = (filter: string) => {
@@ -79,20 +76,20 @@ export default function WorkoutsPage() {
   };
 
   // Append new results to existing plans
-  if (data && data.plans) {
+  if (data) {
     if (page === 1) {
-      setAllPlans(data.plans);
-    } else if (allPlans.length > 0 && data.plans.length > 0) {
-      const isNewData = !allPlans.some(p => p.id === data.plans[0].id);
+      setAllPlans(data);
+    } else if (allPlans.length > 0 && data.length > 0) {
+      const isNewData = !allPlans.some(p => p.id === data[0].id);
       if (isNewData) {
-        setAllPlans([...allPlans, ...data.plans]);
+        setAllPlans([...allPlans, ...data]);
       }
     }
   }
 
-  const plans = page === 1 ? (data?.plans ?? []) : allPlans;
-  const pagination = data?.pagination;
-  const hasMore = pagination && page < pagination.totalPages;
+  const plans = page === 1 ? (data ?? []) : allPlans;
+  const planTotal = (meta as { total?: number } | undefined)?.total ?? 0;
+  const hasMore = planTotal > 0 && allPlans.length < planTotal;
 
   const handleGenerateAIPlan = async () => {
     setGeneratingAI(true);
