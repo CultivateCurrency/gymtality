@@ -18,8 +18,6 @@ import { useAuthStore } from "@/store/auth-store";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
 export default function SignUpPage() {
   const router = useRouter();
   const { setPendingEmail } = useAuthStore();
@@ -53,7 +51,7 @@ export default function SignUpPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/signup`, {
+      const res = await fetch(`/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, role }),
