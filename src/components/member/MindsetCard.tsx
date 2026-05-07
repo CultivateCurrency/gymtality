@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Brain } from "lucide-react";
 
 interface MindsetData {
@@ -29,15 +28,15 @@ export function MindsetCard() {
 
   if (loading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full animate-pulse">
         <CardHeader className="pb-2">
-          <Skeleton className="h-5 w-36" />
+          <div className="h-5 w-36 rounded bg-zinc-800" />
         </CardHeader>
         <CardContent className="space-y-3">
-          <Skeleton className="h-6 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-4/6" />
-          <Skeleton className="h-10 w-full rounded-md" />
+          <div className="h-6 w-full rounded bg-zinc-800" />
+          <div className="h-4 w-5/6 rounded bg-zinc-800" />
+          <div className="h-4 w-4/6 rounded bg-zinc-800" />
+          <div className="h-10 w-full rounded-md bg-zinc-800" />
         </CardContent>
       </Card>
     );
