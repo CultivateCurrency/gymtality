@@ -11,9 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthStore } from "@/store/auth-store";
-import { Loader2, CheckCircle } from "lucide-react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -74,7 +72,7 @@ export default function VerifyPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/verify`, {
+      const res = await fetch(`/api/auth/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: pendingEmail, otp: otpString }),
@@ -168,7 +166,7 @@ export default function VerifyPage() {
                 setResendMsg("");
                 setError("");
                 try {
-                  const res = await fetch(`${API_URL}/api/auth/resend-otp`, {
+                  const res = await fetch(`/api/auth/resend-otp`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: pendingEmail }),
@@ -194,6 +192,15 @@ export default function VerifyPage() {
               {resendMsg}
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Login
+          </button>
         </CardContent>
       </form>
     </Card>
