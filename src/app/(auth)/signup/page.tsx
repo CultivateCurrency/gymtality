@@ -89,7 +89,7 @@ export default function SignUpPage() {
           {/* Social sign-up */}
           <div className="flex gap-3">
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/google`}
+              href="/api/auth/google"
               className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-800 border border-zinc-700 hover:border-zinc-600 rounded-xl text-[13px] font-medium text-zinc-300 hover:text-white transition-all"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -101,7 +101,7 @@ export default function SignUpPage() {
               Continue with Google
             </a>
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/auth/apple`}
+              href="/api/auth/apple"
               className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-800 border border-zinc-700 hover:border-zinc-600 rounded-xl text-[13px] font-medium text-zinc-300 hover:text-white transition-all"
             >
               <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">

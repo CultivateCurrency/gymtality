@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-const OAUTH_BASE = process.env.NEXT_PUBLIC_OAUTH_URL || "";
+const OAUTH_BASE = process.env.NEXT_PUBLIC_APP_URL || "";
 
 // Reads ?error= param from the URL after Google OAuth redirect and shows a toast.
 // Must be inside Suspense because useSearchParams() suspends during SSR.
