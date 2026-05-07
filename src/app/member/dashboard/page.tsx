@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { useApi } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
+import { MindsetCard } from "@/components/member/MindsetCard";
 
 // ── Quick action cards shown in the hero area ──────────────────────────────
 const quickActions = [
@@ -227,6 +228,9 @@ export default function MemberDashboard() {
         ))}
       </div>
 
+
+      {/* ── Daily Mindset Card ───────────────────────────────────────── */}
+      <MindsetCard />
 
       {/* ── Subscription upgrade banner (only shown when no active sub) ── */}
       {subscriptionData === null && (

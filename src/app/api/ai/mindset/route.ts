@@ -14,6 +14,66 @@ const schema = z.object({
   timeOfDay: z.enum(["morning", "afternoon", "evening", "night"]),
 });
 
+export async function GET(req: NextRequest) {
+  try {
+    const auth = requireAuth(req);
+    if (auth instanceof NextResponse) return auth;
+
+    const { allowed, retryAfter } = checkRateLimit(`ai-mindset:${auth.userId}`, 20, 60 * 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Try again later." },
+        { status: 429, headers: retryAfter ? { "Retry-After": String(retryAfter) } : {} }
+      );
+    }
+
+    const accessToken = req.cookies.get("gymtality_at")?.value;
+    const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+
+    // Check today's cache first
+    const cacheRes = await fetch(
+      `${BACKEND_URL}/api/ai/recommendations/today?type=MINDSET`,
+      { headers: authHeader }
+    ).then((r) => r.json()).catch(() => ({ success: false }));
+
+    if (cacheRes?.success && cacheRes?.data) {
+      return NextResponse.json({ success: true, data: cacheRes.data, cached: true });
+    }
+
+    // Cache miss — fetch profile goals to personalise
+    const profileRes = await fetch(`${BACKEND_URL}/api/users/profile`, {
+      headers: authHeader,
+    }).then((r) => r.json()).catch(() => null);
+
+    const goals: string[] = profileRes?.data?.goals ?? [];
+    const goalText = goals.length > 0 ? goals.join(", ") : "improve overall fitness";
+
+    const hour = new Date().getHours();
+    const timeOfDay =
+      hour < 12 ? "morning" : hour < 17 ? "afternoon" : hour < 21 ? "evening" : "night";
+
+    const mindset = await generateMindset({ mood: "focused", goal: goalText, timeOfDay });
+
+    // Save to backend (fire-and-forget)
+    if (accessToken) {
+      fetch(`${BACKEND_URL}/api/ai/recommendations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          type: "MINDSET",
+          input: { mood: "focused", goal: goalText, timeOfDay },
+          output: mindset,
+        }),
+      }).catch(() => {});
+    }
+
+    return NextResponse.json({ success: true, data: mindset, cached: false });
+  } catch (error) {
+    console.error("[api/ai/mindset GET] Error:", error);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = requireAuth(req);
