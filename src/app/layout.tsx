@@ -16,8 +16,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gymtality",
-  description: "Your complete fitness ecosystem — workouts, community, live classes, coaching, music, and more.",
+  title: "Gymtality — Train Your Body. Master Your Mind.",
+  description: "Gymtality is a complete fitness platform with AI-powered workouts, mindset coaching, live streaming, music curation, and community — built for members and coaches.",
+  keywords: ["fitness app", "gym platform", "AI coach", "live streaming workouts", "mindset coaching", "workout tracker", "online gym", "gymtality"],
+  authors: [{ name: "Gymtality" }],
+  metadataBase: new URL("https://gymtality.fit"),
+  openGraph: {
+    title: "Gymtality — Train Your Body. Master Your Mind.",
+    description: "AI-powered workouts, mindset coaching, live streaming, music, and community — all in one platform.",
+    url: "https://gymtality.fit",
+    siteName: "Gymtality",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Gymtality — Complete Fitness Platform",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Gymtality — Train Your Body. Master Your Mind.",
+    description: "AI-powered workouts, mindset coaching, live streaming, music, and community.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({

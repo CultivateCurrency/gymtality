@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Zap, Music, Users, Brain, Mail, Github, Twitter, Instagram, Check, Loader2 } from "lucide-react";
+import { ArrowRight, Zap, Music, Users, Brain, Mail, Github, Twitter, Instagram, Check, Loader2, Radio, Bot } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LandingPage() {
@@ -115,7 +115,7 @@ export default function LandingPage() {
         {/* Headline */}
         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.1] text-center max-w-4xl mb-6 animate-fade-in">
           Train Your Body.{" "}
-          <span className="text-orange-400">Strengthen Your Mind.</span>
+          <span className="text-orange-400">Master Your Mind.</span>
         </h1>
 
         {/* Subheading */}
@@ -184,9 +184,9 @@ export default function LandingPage() {
               <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-500/30 transition-colors">
                 <Brain size={28} className="text-orange-500" />
               </div>
-              <h3 className="text-2xl font-bold mb-3">Mental Wellness</h3>
+              <h3 className="text-2xl font-bold mb-3">Mindset</h3>
               <p className="text-zinc-400 leading-relaxed">
-                Daily affirmations, meditation sessions, and mindset training. Build mental resilience alongside physical strength with guidance from wellness experts.
+                Daily affirmations, mindset coaching, and mental resilience training. Start every day with a personalized mindset card built around your goals.
               </p>
             </div>
 
@@ -206,9 +206,31 @@ export default function LandingPage() {
               <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-500/30 transition-colors">
                 <Users size={28} className="text-orange-500" />
               </div>
-              <h3 className="text-2xl font-bold mb-3">Community & Challenges</h3>
+              <h3 className="text-2xl font-bold mb-3">Community</h3>
               <p className="text-zinc-400 leading-relaxed">
                 Connect with a global fitness community. Participate in challenges, compete on leaderboards, and celebrate victories together with people who share your goals.
+              </p>
+            </div>
+
+            {/* Feature 5 — AI Coach */}
+            <div className="group p-8 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-orange-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10">
+              <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-500/30 transition-colors">
+                <Bot size={28} className="text-orange-500" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">AI Coach</h3>
+              <p className="text-zinc-400 leading-relaxed">
+                Your personal AI trainer available 24/7. Get instant answers on workouts, nutrition, and recovery — all tailored to your goals and fitness level.
+              </p>
+            </div>
+
+            {/* Feature 6 — Live Streaming */}
+            <div className="group p-8 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-orange-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10">
+              <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-500/30 transition-colors">
+                <Radio size={28} className="text-orange-500" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">Live Streaming</h3>
+              <p className="text-zinc-400 leading-relaxed">
+                Join live workout classes with certified coaches in real time. Interact, ask questions, and train alongside a global community — all from anywhere.
               </p>
             </div>
           </div>

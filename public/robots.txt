@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /member/
+Disallow: /coach/
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://gymtality.fit/sitemap.xml
