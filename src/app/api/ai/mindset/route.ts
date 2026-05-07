@@ -6,9 +6,12 @@ import { generateMindset } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
+
 const schema = z.object({
   mood: z.string().min(1).max(100),
-  challenge: z.string().max(300).optional(),
+  goal: z.string().min(1).max(200),
+  timeOfDay: z.enum(["morning", "afternoon", "evening", "night"]),
 });
 
 export async function POST(req: NextRequest) {
@@ -38,6 +41,24 @@ export async function POST(req: NextRequest) {
     }
 
     const mindset = await generateMindset(parsed.data);
+
+    // Save to backend (fire-and-forget — never fail the request if save fails)
+    const accessToken = req.cookies.get("gymtality_at")?.value;
+    if (accessToken) {
+      fetch(`${BACKEND_URL}/api/ai/recommendations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: "MINDSET",
+          input: parsed.data,
+          output: mindset,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, data: mindset });
   } catch (error) {
     console.error("[api/ai/mindset] Error:", error);

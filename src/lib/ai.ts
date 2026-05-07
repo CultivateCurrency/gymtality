@@ -28,7 +28,7 @@ export interface GeneratedWorkout {
 
 export interface GeneratedMindset {
   affirmation: string;
-  coaching: string;
+  motivationalMessage: string;
   actionStep: string;
   focus: string;
 }
@@ -106,18 +106,19 @@ Duration: ${input.duration} minutes${input.focus ? `\nFocus: ${input.focus}` : "
 
 export async function generateMindset(input: {
   mood: string;
-  challenge?: string;
+  goal: string;
+  timeOfDay: string;
 }): Promise<GeneratedMindset> {
   const system = `You are a sports psychologist and mindset coach. Return a JSON object with this exact shape:
 {
   "affirmation": string,
-  "coaching": string,
+  "motivationalMessage": string,
   "actionStep": string,
   "focus": string
 }
-affirmation: one powerful sentence. coaching: 2-3 sentences of direct, actionable coaching. actionStep: one concrete thing to do right now. focus: one word or short phrase for today's mental focus. Be warm but direct. Never generic.`;
+affirmation: one powerful, personal sentence tailored to their mood and goal. motivationalMessage: 2-3 sentences of direct, energising coaching that fits the time of day and their current state. actionStep: one concrete thing to do right now. focus: one word or short phrase for today's mental focus. Be warm but direct. Never generic.`;
 
-  const user = `Mood: ${input.mood}${input.challenge ? `\nChallenge: ${input.challenge}` : ""}`;
+  const user = `Mood: ${input.mood}\nGoal: ${input.goal}\nTime of day: ${input.timeOfDay}`;
 
   const raw = await chat(system, user);
   return parseJson<GeneratedMindset>(raw);
