@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const auth = requireAuth(req);
     if (auth instanceof NextResponse) return auth;
 
-    const { allowed, retryAfter } = checkRateLimit(`ai-workout:${auth.userId}`, 20, 60 * 60 * 1000);
+    const { allowed, retryAfter } = await checkRateLimit(`ai-workout:${auth.userId}`, 20, 60 * 60 * 1000);
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Too many requests. Try again later." },

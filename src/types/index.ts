@@ -1,16 +1,111 @@
-import type {
-  User,
-  UserProfile,
-  CoachProfile,
-  Tenant,
-  WorkoutPlan,
-  Exercise,
-  Post,
-  Event,
-  Subscription,
-  Notification,
-  UserRole,
-} from "@/generated/prisma/client";
+// Database model types (defined locally, mirroring backend schema)
+export type UserRole = "ADMIN" | "COACH" | "MEMBER" | "GUEST" | "OWNER" | "SUPER_ADMIN";
+
+export interface User {
+  id: string;
+  tenantId: string;
+  email: string;
+  username: string;
+  fullName: string;
+  profilePhoto: string | null;
+  role: UserRole;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserProfile {
+  id: string;
+  userId: string;
+  tenantId: string;
+  bio?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  weight?: number | null;
+  height?: number | null;
+}
+
+export interface CoachProfile {
+  id: string;
+  userId: string;
+  tenantId: string;
+  specializations?: string[];
+  certification?: string | null;
+  yearsExperience?: number | null;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  primaryColor?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WorkoutPlan {
+  id: string;
+  tenantId: string;
+  title: string;
+  description?: string | null;
+  coachId: string;
+  duration?: number | null;
+  difficulty?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Exercise {
+  id: string;
+  tenantId: string;
+  workoutPlanId: string;
+  name: string;
+  sets?: number | null;
+  reps?: number | null;
+  duration?: number | null;
+}
+
+export interface Post {
+  id: string;
+  tenantId: string;
+  userId: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Event {
+  id: string;
+  tenantId: string;
+  title: string;
+  description?: string | null;
+  startTime: Date;
+  endTime: Date;
+  coachId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Subscription {
+  id: string;
+  tenantId: string;
+  userId: string;
+  planId: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Notification {
+  id: string;
+  tenantId: string;
+  userId: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+}
 
 // Auth types
 export interface SessionUser {

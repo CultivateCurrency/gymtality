@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   try {
     // Rate limit: 5 failed attempts per 15 minutes per IP
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? "unknown";
-    const limit = checkRateLimit(`login:${ip}`, 5, 15 * 60 * 1000);
+    const limit = await checkRateLimit(`login:${ip}`, 5, 15 * 60 * 1000);
 
     if (!limit.allowed) {
       return NextResponse.json(

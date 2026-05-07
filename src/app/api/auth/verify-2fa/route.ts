@@ -28,7 +28,7 @@ interface BackendVerifyResponse {
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-    const { allowed, retryAfter } = checkRateLimit(`verify-2fa:${ip}`, 5, 15 * 60 * 1000);
+    const { allowed, retryAfter } = await checkRateLimit(`verify-2fa:${ip}`, 5, 15 * 60 * 1000);
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Too many attempts. Try again later." },
