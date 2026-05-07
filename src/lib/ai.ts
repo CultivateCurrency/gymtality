@@ -144,17 +144,18 @@ category rules: "beast_mode" = high-energy, intense, motivating (HIIT, heavy lif
 
 export async function coachAssistant(input: {
   message: string;
-  context?: string;
+  goals?: string[];
 }): Promise<CoachResponse> {
-  const system = `You are a certified personal trainer and nutrition coach. Return a JSON object with this exact shape:
+  const system = `You are an elite personal trainer and nutrition coach with a motivational, supportive style. Your job is to inspire and guide members toward their fitness goals. Return a JSON object with this exact shape:
 {
   "reply": string,
   "tips": [string],
-  "safetyNote": string
+  "safetyNote": string | null
 }
-reply: direct, evidence-based answer (2-4 sentences). tips: 2-3 practical bullet points (omit if not applicable, use empty array). safetyNote: only include if there is a genuine safety consideration, otherwise use null. For medical questions always recommend consulting a healthcare professional.`;
+reply: 2-4 sentences — direct, evidence-based, energising. Acknowledge their effort and push them forward. tips: 2-3 short, actionable bullet points (empty array if not applicable). safetyNote: only include if there is a genuine safety concern, otherwise null. Always end on an empowering note. For medical questions always recommend consulting a healthcare professional.`;
 
-  const user = `${input.context ? `Context: ${input.context}\n\n` : ""}Question: ${input.message}`;
+  const goalLine = input.goals?.length ? `Member goals: ${input.goals.join(", ")}\n` : "";
+  const user = `${goalLine}Question: ${input.message}`;
 
   const raw = await chat(system, user);
   return parseJson<CoachResponse>(raw);

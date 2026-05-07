@@ -6,9 +6,11 @@ import { coachAssistant } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
+
 const schema = z.object({
   message: z.string().min(1).max(1000),
-  context: z.string().max(500).optional(),
+  goals: z.array(z.string().max(100)).max(10).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -38,6 +40,24 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await coachAssistant(parsed.data);
+
+    // Save to backend (fire-and-forget — never fail the request if save fails)
+    const accessToken = req.cookies.get("gymtality_at")?.value;
+    if (accessToken) {
+      fetch(`${BACKEND_URL}/api/ai/recommendations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: "COACH",
+          input: parsed.data,
+          output: response,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, data: response });
   } catch (error) {
     console.error("[api/ai/coach] Error:", error);
