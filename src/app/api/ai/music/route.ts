@@ -6,11 +6,19 @@ import { categorizeMusic } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
-const schema = z.object({
-  workoutType: z.string().min(1).max(100),
-  tempo: z.enum(["slow", "moderate", "fast", "variable"]).optional(),
-  genre: z.string().max(100).optional(),
-});
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
+
+const schema = z
+  .object({
+    songId: z.string().optional(),
+    title: z.string().max(200).optional(),
+    artist: z.string().max(200).optional(),
+    genre: z.string().max(100).optional(),
+    description: z.string().max(500).optional(),
+  })
+  .refine((d) => d.songId || d.title || d.artist || d.description, {
+    message: "Provide at least one of: songId, title, artist, or description",
+  });
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,8 +46,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const music = await categorizeMusic(parsed.data);
-    return NextResponse.json({ success: true, data: music });
+    const { songId, ...metadata } = parsed.data;
+    const result = await categorizeMusic(metadata);
+
+    // Save category back to the Song record if a songId was provided
+    const accessToken = req.cookies.get("gymtality_at")?.value;
+    if (songId && accessToken) {
+      fetch(`${BACKEND_URL}/api/music/songs/${songId}/category`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ category: result.category }),
+      }).catch(() => {});
+    }
+
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
     console.error("[api/ai/music] Error:", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

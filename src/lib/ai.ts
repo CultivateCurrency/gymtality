@@ -33,17 +33,9 @@ export interface GeneratedMindset {
   focus: string;
 }
 
-export interface MusicRecommendation {
-  genre: string;
-  artists: string[];
-  vibe: string;
-  bpm?: string;
-  reason: string;
-}
-
 export interface CategorizedMusic {
-  recommendations: MusicRecommendation[];
-  playlistVibe: string;
+  category: "beast_mode" | "calm" | "focus";
+  recommendedPlaylistType: string;
 }
 
 export interface CoachResponse {
@@ -125,26 +117,26 @@ affirmation: one powerful, personal sentence tailored to their mood and goal. mo
 }
 
 export async function categorizeMusic(input: {
-  workoutType: string;
-  tempo?: string;
+  title?: string;
+  artist?: string;
   genre?: string;
+  description?: string;
 }): Promise<CategorizedMusic> {
-  const system = `You are an expert workout music curator. Return a JSON object with this exact shape:
+  const system = `You are a fitness music expert. Given song metadata or a description, assign it a workout category and a recommended playlist type. Return a JSON object with this exact shape:
 {
-  "recommendations": [
-    {
-      "genre": string,
-      "artists": [string],
-      "vibe": string,
-      "bpm": string,
-      "reason": string
-    }
-  ],
-  "playlistVibe": string
+  "category": "beast_mode" | "calm" | "focus",
+  "recommendedPlaylistType": string
 }
-Include 4-5 recommendations. Each artists array should have 2-3 names. bpm should be a range like "120-140 BPM". playlistVibe is a 1-sentence description of the overall energy.`;
+category rules: "beast_mode" = high-energy, intense, motivating (HIIT, heavy lifting); "calm" = low intensity, recovery, stretching, meditation; "focus" = moderate energy, steady state, concentration (cardio, study, mobility). recommendedPlaylistType: a short descriptive label like "HIIT Power", "Recovery & Stretch", "Steady Cardio", "Deep Focus", etc.`;
 
-  const user = `Workout type: ${input.workoutType}${input.tempo ? `\nTempo preference: ${input.tempo}` : ""}${input.genre ? `\nGenre preference: ${input.genre}` : ""}`;
+  const parts = [
+    input.title ? `Title: ${input.title}` : null,
+    input.artist ? `Artist: ${input.artist}` : null,
+    input.genre ? `Genre: ${input.genre}` : null,
+    input.description ? `Description: ${input.description}` : null,
+  ].filter(Boolean);
+
+  const user = parts.join("\n") || "Unknown song";
 
   const raw = await chat(system, user);
   return parseJson<CategorizedMusic>(raw);
