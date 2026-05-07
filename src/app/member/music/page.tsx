@@ -65,10 +65,18 @@ interface Song {
   id: string;
   title: string;
   artist: string | null;
+  genre: string | null;
+  category: string | null;
   duration: number;
   audioUrl: string | null;
   order: number;
 }
+
+const CATEGORY_LABELS: Record<string, { label: string; className: string }> = {
+  beast_mode: { label: "Beast Mode", className: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+  calm:       { label: "Calm",       className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  focus:      { label: "Focus",      className: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+};
 
 interface AlbumDetail extends Album {
   songs: Song[];
@@ -118,6 +126,46 @@ export default function MusicPage() {
 
   const songs = albumDetail?.songs ?? [];
   songsRef.current = songs;
+
+  // category overrides: pre-populated from DB, updated live after AI calls
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+
+  // Seed categoryMap from DB values when album loads, then auto-categorize missing ones
+  useEffect(() => {
+    if (!songs.length) return;
+
+    // Seed from existing DB categories
+    const initial: Record<string, string> = {};
+    for (const s of songs) {
+      if (s.category) initial[s.id] = s.category;
+    }
+    setCategoryMap(initial);
+
+    // Auto-categorize songs that have no category yet (max 5 at once to be conservative)
+    const uncategorized = songs.filter((s) => !s.category).slice(0, 5);
+    if (!uncategorized.length) return;
+
+    for (const song of uncategorized) {
+      fetch("/api/ai/music", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          songId: song.id,
+          title: song.title,
+          artist: song.artist ?? undefined,
+          genre: song.genre ?? undefined,
+        }),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res?.success && res?.data?.category) {
+            setCategoryMap((prev) => ({ ...prev, [song.id]: res.data.category }));
+          }
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [albumDetail?.id]);
 
   const playSong = useCallback((song: Song) => {
     setCurrentSong(song);
@@ -462,6 +510,15 @@ export default function MusicPage() {
                         </p>
                         <p className="text-xs text-zinc-500">{song.artist || "Unknown Artist"}</p>
                       </div>
+                      {(() => {
+                        const cat = categoryMap[song.id];
+                        const style = cat ? CATEGORY_LABELS[cat] : null;
+                        return style ? (
+                          <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${style.className}`}>
+                            {style.label}
+                          </span>
+                        ) : null;
+                      })()}
                       <button
                         onClick={(e) => handleToggleLike(e, song)}
                         className={`p-1 transition ${
