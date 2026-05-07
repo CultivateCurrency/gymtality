@@ -6,11 +6,13 @@ import { generateWorkout } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
+
 const schema = z.object({
   goal: z.string().min(1).max(200),
-  level: z.enum(["beginner", "intermediate", "advanced"]),
+  fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]),
   equipment: z.array(z.string()).min(1).max(20),
-  durationMins: z.number().int().min(15).max(120),
+  duration: z.number().int().min(15).max(120),
   focus: z.string().max(100).optional(),
 });
 
@@ -41,6 +43,24 @@ export async function POST(req: NextRequest) {
     }
 
     const workout = await generateWorkout(parsed.data);
+
+    // Save to backend (fire-and-forget — never fail the request if save fails)
+    const accessToken = req.cookies.get("gymtality_at")?.value;
+    if (accessToken) {
+      fetch(`${BACKEND_URL}/api/ai/recommendations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          type: "WORKOUT",
+          input: parsed.data,
+          output: workout,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, data: workout });
   } catch (error) {
     console.error("[api/ai/workout] Error:", error);

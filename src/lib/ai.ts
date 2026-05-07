@@ -79,9 +79,9 @@ async function chat(system: string, user: string): Promise<string> {
 
 export async function generateWorkout(input: {
   goal: string;
-  level: string;
+  fitnessLevel: string;
   equipment: string[];
-  durationMins: number;
+  duration: number;
   focus?: string;
 }): Promise<GeneratedWorkout> {
   const system = `You are an expert personal trainer. Generate a structured workout plan and return it as JSON matching this exact shape:
@@ -96,9 +96,9 @@ export async function generateWorkout(input: {
 Be specific about sets/reps based on fitness level. Include 3-5 main exercises. Always prioritize safety.`;
 
   const user = `Goal: ${input.goal}
-Level: ${input.level}
+Level: ${input.fitnessLevel}
 Equipment: ${input.equipment.join(", ")}
-Duration: ${input.durationMins} minutes${input.focus ? `\nFocus: ${input.focus}` : ""}`;
+Duration: ${input.duration} minutes${input.focus ? `\nFocus: ${input.focus}` : ""}`;
 
   const raw = await chat(system, user);
   return parseJson<GeneratedWorkout>(raw);
