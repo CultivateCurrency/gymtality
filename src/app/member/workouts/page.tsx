@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -76,16 +76,18 @@ export default function WorkoutsPage() {
   };
 
   // Append new results to existing plans
-  if (data) {
+  useEffect(() => {
+    if (!data) return;
     if (page === 1) {
       setAllPlans(data);
-    } else if (allPlans.length > 0 && data.length > 0) {
-      const isNewData = !allPlans.some(p => p.id === data[0].id);
-      if (isNewData) {
-        setAllPlans([...allPlans, ...data]);
-      }
+    } else if (data.length > 0) {
+      setAllPlans((prev) => {
+        if (prev.length === 0) return data;
+        const isNewData = !prev.some((p) => p.id === data[0].id);
+        return isNewData ? [...prev, ...data] : prev;
+      });
     }
-  }
+  }, [data, page]);
 
   const plans = page === 1 ? (data ?? []) : allPlans;
   const planTotal = (meta as { total?: number } | undefined)?.total ?? 0;
