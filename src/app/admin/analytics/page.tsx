@@ -64,6 +64,11 @@ interface AnalyticsData {
   monthlyRevenue: { month: string; revenue: number }[];
   dailyActivity: { day: string; users: number }[];
   classAttendance: { week: string; attended: number }[];
+  community: {
+    postsThisMonth: number;
+    commentsThisMonth: number;
+    likesThisMonth: number;
+  };
 }
 
 function getInitials(fullName: string): string {
@@ -340,15 +345,21 @@ export default function AdminAnalyticsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
-                <p className="text-2xl font-bold text-white">—</p>
+                <p className="text-2xl font-bold text-white">
+                  {(data.community?.postsThisMonth ?? 0).toLocaleString()}
+                </p>
                 <p className="text-xs text-zinc-400">Posts This Month</p>
               </div>
               <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
-                <p className="text-2xl font-bold text-white">—</p>
+                <p className="text-2xl font-bold text-white">
+                  {(data.community?.commentsThisMonth ?? 0).toLocaleString()}
+                </p>
                 <p className="text-xs text-zinc-400">Comments</p>
               </div>
               <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
-                <p className="text-2xl font-bold text-white">—</p>
+                <p className="text-2xl font-bold text-white">
+                  {(data.community?.likesThisMonth ?? 0).toLocaleString()}
+                </p>
                 <p className="text-xs text-zinc-400">
                   <Heart className="h-3 w-3 inline mr-1" />
                   Likes

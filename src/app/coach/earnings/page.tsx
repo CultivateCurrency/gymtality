@@ -179,9 +179,8 @@ export default function CoachEarningsPage() {
                 <p className="text-sm text-zinc-400">This Month</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-3 text-xs text-green-400">
-              <ArrowUpRight className="h-3 w-3" />
-              <span>+12% vs last month</span>
+            <div className="flex items-center gap-1 mt-3 text-xs text-zinc-500">
+              <span>Current month donations</span>
             </div>
           </CardContent>
         </Card>
@@ -200,7 +199,7 @@ export default function CoachEarningsPage() {
               </div>
             </div>
             <p className="text-xs text-zinc-500 mt-3">
-              Next payout: March 20, 2026
+              Payouts processed weekly via Stripe
             </p>
           </CardContent>
         </Card>

@@ -164,7 +164,7 @@ function SettingsContent() {
   const [toggling2FA, setToggling2FA] = useState(false);
 
   const { data: userData } = useApi<UserProfile>("/api/users/me");
-  const { data: subData } = useApi<SubscriptionData>("/api/admin/subscriptions?mySubscription=true");
+  const { data: subData } = useApi<SubscriptionData>("/api/payments/subscription");
 
   // Populate form with current user data
   useEffect(() => {
