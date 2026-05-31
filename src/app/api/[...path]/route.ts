@@ -27,6 +27,17 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
     "x-real-ip": req.headers.get("x-real-ip") || "",
   };
 
+  // Forward client-supplied context headers when present. These are the
+  // narrow allowlist of headers the backend reads:
+  //   X-Timezone   — IANA tz for time-of-day-sensitive endpoints (streak, etc.)
+  //   X-Request-Id — correlation id (backend will honor or generate)
+  // We do NOT pass through arbitrary headers; allowlist prevents
+  // request smuggling and accidental cookie leaks.
+  const tz = req.headers.get("x-timezone");
+  if (tz) forwardHeaders["x-timezone"] = tz;
+  const reqId = req.headers.get("x-request-id");
+  if (reqId) forwardHeaders["x-request-id"] = reqId;
+
   // Proxy injects Authorization from the httpOnly cookie — client never sends raw tokens
   if (accessToken) forwardHeaders["authorization"] = `Bearer ${accessToken}`;
 

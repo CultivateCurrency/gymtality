@@ -41,6 +41,7 @@ import {
 import { useApi } from "@/hooks/use-api";
 import { useAuthStore } from "@/store/auth-store";
 import { MindsetCard } from "@/components/member/MindsetCard";
+import { StreakCard } from "@/components/streak/streak-card";
 
 // ── Quick action cards shown in the hero area ──────────────────────────────
 const quickActions = [
@@ -179,14 +180,14 @@ export default function MemberDashboard() {
                 : "Start a workout today to build your streak."}
             </p>
           </div>
-          {/* Streak badge */}
-          {stats.streak > 0 && (
-            <div className="shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/15 border border-orange-500/30">
-              <Flame size={22} className="text-orange-400" />
-              <span className="text-lg font-black text-white leading-none">{stats.streak}</span>
-              <span className="text-[9px] text-orange-400/70 uppercase tracking-wide">streak</span>
-            </div>
-          )}
+          {/*
+            Streak badge — replaced the inline computation (which was UTC-
+            based and capped at 365 days) with the canonical /me/streak
+            endpoint via <StreakCard variant="compact" />. The component
+            owns its own loading/error/empty states, so the parent doesn't
+            need a conditional anymore.
+          */}
+          <StreakCard variant="compact" />
         </div>
 
         {/* Quick action buttons */}
