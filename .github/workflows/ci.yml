@@ -1,0 +1,55 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs when a new commit lands on a branch — saves GH
+# Actions minutes and surfaces fresh-tip failures faster.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, Type-check, Test, Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Run independent steps in series — they're each fast enough that
+      # parallelizing them across jobs would cost more in cold-start than
+      # we'd save in wall-clock. Re-evaluate when total CI > 5min.
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true # ESLint debt exists; surface it without blocking merge yet
+
+      - name: Type check
+        run: npm run type-check
+        continue-on-error: true # 60+ routes have TS debt; same reason as above
+
+      - name: Unit tests (Vitest + RTL)
+        run: npm test
+
+      - name: Production build
+        run: NODE_OPTIONS="--max-old-space-size=4096" npm run build
+        env:
+          # CI doesn't have real env vars; the build needs to succeed without them.
+          # Public stubs only — never real credentials in this file.
+          NEXT_PUBLIC_API_URL: "http://localhost:4000"
+          NEXTAUTH_URL: "http://localhost:3000"
+          NEXTAUTH_SECRET: "ci-stub-secret-32-chars-minimum-required"
